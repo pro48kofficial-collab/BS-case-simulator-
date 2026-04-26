@@ -3,35 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Case Game FIXED</title>
+<title>Neon Case Game</title>
 
 <style>
 body{
 margin:0;
 font-family:Arial;
-background:#05060a;
 color:white;
+background:#05060a;
 }
 
-/* LOADING */
-#loading{
-position:fixed;inset:0;
-background:#000;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-z-index:9999;
+/* background */
+body::before{
+content:"";
+position:fixed;
+inset:0;
+background:url("https://images.unsplash.com/photo-1601758123927-1962c2b6d9a3?auto=format&fit=crop&w=1400&q=80");
+background-size:cover;
+opacity:0.2;
+z-index:-1;
 }
-.loader{
-width:50px;height:50px;
-border:4px solid #222;
-border-top:4px solid cyan;
-border-radius:50%;
-animation:spin 1s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.fade{opacity:0;visibility:hidden;transition:.5s}
 
 /* TOP */
 .top{
@@ -39,16 +30,13 @@ position:fixed;
 top:10px;
 left:10px;
 display:flex;
-gap:10px;
+gap:8px;
 align-items:center;
-z-index:10;
 }
 
 #avatarImg{
-width:45px;
-height:45px;
+width:45px;height:45px;
 border-radius:50%;
-background:#222;
 border:2px solid cyan;
 object-fit:cover;
 }
@@ -56,9 +44,8 @@ object-fit:cover;
 #nick{
 width:90px;
 background:#111;
-border:1px solid cyan;
 color:white;
-padding:5px;
+border:1px solid cyan;
 }
 
 /* STATS */
@@ -69,19 +56,10 @@ right:10px;
 background:#111;
 padding:8px;
 border:1px solid cyan;
+border-radius:8px;
 }
 
-/* MAIN */
-.center{
-padding-top:90px;
-padding-bottom:80px;
-display:flex;
-flex-direction:column;
-align-items:center;
-gap:10px;
-}
-
-/* BUTTON FIX (no overlap) */
+/* MENU */
 .menu{
 position:fixed;
 bottom:0;
@@ -93,24 +71,79 @@ border-top:1px solid cyan;
 
 .menu button{
 flex:1;
-padding:12px;
-border:none;
+padding:10px;
 background:none;
+border:none;
 color:white;
-font-size:14px;
+}
+
+/* MAIN */
+.center{
+padding-top:80px;
+padding-bottom:70px;
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+/* BUTTONS */
+.btn{
+padding:10px;
+margin:5px;
+border:1px solid cyan;
+background:#111;
+color:white;
+border-radius:6px;
 }
 
 /* CASE */
 .caseBox{
-padding:12px;
 border:1px solid cyan;
+padding:10px;
+margin:5px;
 width:90%;
 text-align:center;
-border-radius:8px;
+}
+
+/* ROULETTE */
+.roulette{
+width:320px;
+overflow:hidden;
+border:2px solid cyan;
+position:relative;
+margin-top:10px;
+}
+.items{
+display:flex;
+transition:transform 4s cubic-bezier(0.1,0.7,0.1,1);
+}
+.item{
+min-width:80px;
+height:80px;
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:12px;
+}
+
+.common{background:#555}
+.rare{background:#3b82f6}
+.epic{background:#a855f7}
+.legendary{background:#f59e0b}
+
+.pointer{
+position:absolute;
+left:50%;
+top:0;
+transform:translateX(-50%);
+width:3px;
+height:100%;
+background:red;
 }
 
 /* INVENTORY */
 .invItem{
+background:#111;
 margin:5px;
 padding:8px;
 border:1px solid cyan;
@@ -125,118 +158,193 @@ background:none;
 border:none;
 color:gold;
 text-shadow:0 0 10px gold;
-cursor:pointer;
+}
+
+/* LEVEL */
+.level{
+position:fixed;
+top:60px;
+right:10px;
+color:cyan;
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOADING -->
-<div id="loading">
-<div class="loader"></div>
-Loading...
-</div>
-
-<!-- PROFILE -->
 <div class="top">
 <img id="avatarImg">
-<div>
-<input id="nick" placeholder="Nick"><br>
+<input id="nick" placeholder="Nick">
 <input type="file" id="avatar">
 </div>
-</div>
 
-<!-- STATS -->
 <div class="stats">
-💰 <span id="coins">100</span>
+💰 <span id="coins">0</span><br>
+⭐ Lv <span id="lvl">1</span>
 </div>
 
-<!-- MAIN -->
+<div class="level" id="exp">EXP: 0/100</div>
+
 <div class="center" id="main"></div>
 
-<!-- MENU -->
 <div class="menu">
-<button onclick="shop()">Cases</button>
-<button onclick="invUI()">Inventory</button>
+<button onclick="shop()">Shop</button>
+<button onclick="inventoryUI()">Inv</button>
 <button onclick="clicker()">💰</button>
+<button onclick="market()">Market</button>
 </div>
 
 <script>
+/* SAVE DATA */
+let coins=+localStorage.getItem("coins")||100;
+let xp=+localStorage.getItem("xp")||0;
+let lvl=+localStorage.getItem("lvl")||1;
+let inv=JSON.parse(localStorage.getItem("inv"))||[];
 
-/* DATA */
-let coins = 100;
-let inv = [];
+/* SOUND */
+const sound=new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
 
-/* ELEMENTS */
-let main;
+/* ITEMS */
+const items=[
+{name:"AK-47",rarity:"common"},
+{name:"M4",rarity:"rare"},
+{name:"AWP",rarity:"epic"},
+{name:"Knife",rarity:"legendary"}
+];
 
-/* UPDATE UI */
+/* UPDATE */
 function update(){
-document.getElementById("coins").innerText = coins;
+coinsEl.innerText=coins;
+lvlEl.innerText=lvl;
+exp.innerText=`EXP: ${xp}/100`;
+
+localStorage.setItem("coins",coins);
+localStorage.setItem("xp",xp);
+localStorage.setItem("lvl",lvl);
+localStorage.setItem("inv",JSON.stringify(inv));
 }
 
-/* CLICKER FIXED */
+/* LEVEL SYSTEM */
+function addXP(){
+xp+=10;
+if(xp>=100){
+lvl++;
+xp=0;
+}
+}
+
+/* CLICKER */
 function clicker(){
 coins++;
+addXP();
 update();
 }
 
 /* SHOP */
 function shop(){
-main.innerHTML = `
-<div class="caseBox" onclick="openCase()">📦 Open Case (10💰)</div>
-`;
-}
-
-/* CASE FIXED */
-function openCase(){
-if(coins < 10) return;
-
-coins -= 10;
-
-let items = ["AK-47","M4","AWP","Knife"];
-let win = items[Math.floor(Math.random()*items.length)];
-
-inv.push(win);
-
-update();
-
-alert("Випало: " + win);
-}
-
-/* INVENTORY */
-function invUI(){
-main.innerHTML = "";
-inv.forEach(i=>{
+main.innerHTML="";
+[50,100,200].forEach((price,i)=>{
 let d=document.createElement("div");
-d.className="invItem";
-d.innerText=i;
+d.className="caseBox";
+d.innerHTML=`Case ${i+1} - ${price}💰 <button onclick="openCase(${price})">Open</button>`;
 main.appendChild(d);
 });
 }
 
-/* AVATAR FIX */
-avatar.onchange = (e)=>{
-let r = new FileReader();
-r.onload = ()=>{
-avatarImg.src = r.result;
+/* CASE OPEN */
+function openCase(price){
+if(coins<price)return;
+
+coins-=price;
+sound.play();
+
+main.innerHTML=`
+<div class="roulette">
+<div class="pointer"></div>
+<div id="strip" class="items"></div>
+</div>
+<div id="res"></div>
+`;
+
+let strip=document.getElementById("strip");
+strip.innerHTML="";
+
+for(let i=0;i<50;i++){
+let it=items[Math.floor(Math.random()*items.length)];
+let d=document.createElement("div");
+d.className="item "+it.rarity;
+d.innerText=it.name;
+strip.appendChild(d);
+}
+
+let win=40;
+let offset=(win*80)-150;
+
+setTimeout(()=>{
+strip.style.transform=`translateX(-${offset}px)`;
+},50);
+
+setTimeout(()=>{
+let item=strip.children[win].innerText;
+inv.push(item);
+
+coins+=20;
+addXP();
+
+document.getElementById("res").innerText="🎉 "+item;
+update();
+},4000);
+}
+
+/* INVENTORY */
+function inventoryUI(){
+main.innerHTML="";
+inv.forEach((i,idx)=>{
+let d=document.createElement("div");
+d.className="invItem";
+d.innerHTML=i+" <button onclick='sell("+idx+")'>Sell</button>";
+main.appendChild(d);
+});
+}
+
+/* SELL */
+function sell(i){
+coins+=30;
+inv.splice(i,1);
+update();
+inventoryUI();
+}
+
+/* MARKET */
+function market(){
+main.innerHTML=`
+<div class="caseBox">Sell items for coins</div>
+`;
+}
+
+/* LOAD AVATAR */
+avatar.onchange=e=>{
+let r=new FileReader();
+r.onload=()=>{
+avatarImg.src=r.result;
+localStorage.setItem("avatar",r.result);
 }
 r.readAsDataURL(e.target.files[0]);
 };
 
-/* INIT SAFE */
-window.onload = ()=>{
-main = document.getElementById("main");
+nick.oninput=()=>localStorage.setItem("nick",nick.value);
 
-setTimeout(()=>{
-loading.classList.add("fade");
+/* INIT */
+function init(){
+coinsEl.innerText=coins;
+lvlEl.innerText=lvl;
 shop();
-update();
-},1200);
-};
+}
+init();
 
+/* SAVE LOOP */
+setInterval(update,1000);
 </script>
 
 </body>
-</html>
+  </html>
