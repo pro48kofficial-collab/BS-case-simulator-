@@ -3,53 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Case Simulator</title>
+<title>Neon Case Game</title>
 
 <style>
 body{
 margin:0;
 font-family:Arial;
-color:#fff;
-
-/* neon cs-like background */
+color:white;
 background:#05060a;
 }
 
-/* glow overlay */
+/* BACKGROUND */
 body::before{
 content:"";
 position:fixed;
 inset:0;
-background:radial-gradient(circle at top, rgba(0,255,255,0.15), transparent 50%);
-pointer-events:none;
+background:url("https://images.unsplash.com/photo-1601758123927-1962c2b6d9a3?auto=format&fit=crop&w=1400&q=80");
+background-size:cover;
+opacity:0.2;
+z-index:-1;
 }
 
 /* LOADING */
 #loading{
-position:fixed;inset:0;
+position:fixed;
+inset:0;
 background:#000;
 display:flex;
 flex-direction:column;
 justify-content:center;
 align-items:center;
-z-index:10;
+z-index:9999;
 }
 .loader{
-width:50px;height:50px;
+width:60px;height:60px;
 border:4px solid #222;
 border-top:4px solid cyan;
 border-radius:50%;
 animation:spin 1s linear infinite;
+margin-bottom:10px;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+.fadeOut{
+opacity:0;
+visibility:hidden;
+transition:0.5s;
+}
 
-/* TOP PROFILE */
+/* TOP */
 .top{
 position:fixed;
 top:10px;
 left:10px;
 display:flex;
-gap:10px;
+gap:8px;
 align-items:center;
 z-index:5;
 }
@@ -60,66 +67,82 @@ height:45px;
 border-radius:50%;
 object-fit:cover;
 border:2px solid cyan;
-box-shadow:0 0 10px cyan;
 }
 
 #nick{
 width:90px;
 padding:5px;
-border-radius:6px;
+background:#111;
 border:1px solid cyan;
-background:#0b0f1a;
 color:white;
-box-shadow:0 0 10px cyan;
 }
 
-/* BALANCE */
-.balance{
+/* STATS */
+.stats{
 position:fixed;
 top:10px;
 right:10px;
-padding:6px 10px;
+background:#111;
+padding:8px;
 border:1px solid cyan;
 border-radius:8px;
-box-shadow:0 0 10px cyan;
+}
+
+/* LEVEL */
+.level{
+position:fixed;
+top:70px;
+right:10px;
+color:cyan;
+}
+
+/* MENU */
+.menu{
+position:fixed;
+bottom:0;
+width:100%;
+display:flex;
+background:#111;
+border-top:1px solid cyan;
+}
+.menu button{
+flex:1;
+padding:12px;
+background:none;
+border:none;
+color:white;
 }
 
 /* MAIN */
 .center{
 padding-top:90px;
-padding-bottom:80px;
+padding-bottom:70px;
 display:flex;
 flex-direction:column;
 align-items:center;
 }
 
-/* CASE BOX */
-.case{
-padding:12px;
-margin:8px;
+/* CASE */
+.caseBox{
+border:1px solid cyan;
+padding:10px;
+margin:5px;
 width:90%;
 text-align:center;
-border:1px solid cyan;
-border-radius:10px;
-box-shadow:0 0 10px cyan;
 }
 
-/* OPENING */
-.opening{
-width:95%;
-max-width:420px;
+/* ROULETTE */
+.roulette{
+width:320px;
 overflow:hidden;
 border:2px solid cyan;
 position:relative;
-margin-top:15px;
-box-shadow:0 0 15px cyan;
+margin-top:10px;
 }
-
 .items{
 display:flex;
 transition:transform 4s cubic-bezier(0.1,0.7,0.1,1);
 }
-
 .item{
 min-width:80px;
 height:80px;
@@ -128,7 +151,6 @@ align-items:center;
 justify-content:center;
 font-size:12px;
 }
-
 .common{background:#555}
 .rare{background:#3b82f6}
 .epic{background:#a855f7}
@@ -141,51 +163,26 @@ top:0;
 transform:translateX(-50%);
 width:3px;
 height:100%;
-background:cyan;
-box-shadow:0 0 10px cyan;
+background:red;
 }
 
-/* INVENTORY */
+/* INVENTORY / MARKET */
 .invItem{
-background:#0b0f1a;
+background:#111;
 margin:5px;
 padding:8px;
 border:1px solid cyan;
-border-radius:6px;
 display:flex;
 justify-content:space-between;
-box-shadow:0 0 8px cyan;
 }
 
 /* CLICKER */
 .clickBtn{
-margin-top:25px;
 font-size:40px;
 background:none;
 border:none;
 color:gold;
 text-shadow:0 0 10px gold;
-}
-
-/* BOTTOM MENU */
-.menu{
-position:fixed;
-bottom:0;
-left:0;
-width:100%;
-display:flex;
-background:#05060a;
-border-top:1px solid cyan;
-box-shadow:0 0 15px cyan;
-}
-
-.menu button{
-flex:1;
-padding:12px;
-background:none;
-border:none;
-color:white;
-font-size:14px;
 }
 </style>
 </head>
@@ -195,6 +192,7 @@ font-size:14px;
 <!-- LOADING -->
 <div id="loading">
 <div class="loader"></div>
+Загрузка...
 </div>
 
 <!-- PROFILE -->
@@ -206,94 +204,119 @@ font-size:14px;
 </div>
 </div>
 
-<!-- BALANCE -->
-<div class="balance" id="balance">💰 0</div>
+<!-- STATS -->
+<div class="stats">
+💰 <span id="coins">0</span><br>
+⭐ Lv <span id="lvl">1</span>
+</div>
+
+<div class="level" id="exp">EXP: 0/100</div>
 
 <!-- MAIN -->
 <div class="center" id="main"></div>
 
 <!-- MENU -->
 <div class="menu">
-<button onclick="showCases()">Кейси</button>
-<button onclick="showInventory()">Інвентар</button>
-<button onclick="showClicker()">💰</button>
+<button onclick="shop()">Shop</button>
+<button onclick="inventoryUI()">Inv</button>
+<button onclick="clicker()">💰</button>
+<button onclick="marketUI()">Market</button>
 </div>
 
 <script>
-let balance=+localStorage.getItem("bal")||100;
-let inventory=JSON.parse(localStorage.getItem("inv"))||[];
+/* DATA */
+let coins=+localStorage.getItem("coins")||100;
+let xp=+localStorage.getItem("xp")||0;
+let lvl=+localStorage.getItem("lvl")||1;
+
+let inv=JSON.parse(localStorage.getItem("inv"))||[];
+let market=JSON.parse(localStorage.getItem("market"))||[];
+
+/* ITEMS */
+const items=[
+{name:"AK-47",rarity:"common"},
+{name:"M4",rarity:"rare"},
+{name:"AWP",rarity:"epic"},
+{name:"Knife",rarity:"legendary"}
+];
 
 /* SAVE */
 function save(){
-localStorage.setItem("bal",balance);
-localStorage.setItem("inv",JSON.stringify(inventory));
-localStorage.setItem("nick",nick.value);
-localStorage.setItem("avatar",avatarImg.src);
+localStorage.setItem("coins",coins);
+localStorage.setItem("xp",xp);
+localStorage.setItem("lvl",lvl);
+localStorage.setItem("inv",JSON.stringify(inv));
+localStorage.setItem("market",JSON.stringify(market));
 }
 
-/* LOAD */
-nick.value=localStorage.getItem("nick")||"";
-avatarImg.src=localStorage.getItem("avatar")||"";
-
-/* BALANCE FIX */
+/* UPDATE */
 function update(){
-document.getElementById("balance").innerText="💰 "+balance;
+coinsEl.innerText=coins;
+lvlEl.innerText=lvl;
+exp.innerText=`EXP: ${xp}/100`;
 save();
 }
+
+/* XP */
+function addXP(){
+xp+=10;
+if(xp>=100){
+lvl++;
+xp=0;
+}
+}
+
+/* CLICKER */
+function clicker(){
+coins++;
+addXP();
 update();
-
-/* AVATAR */
-avatar.onchange=e=>{
-let r=new FileReader();
-r.onload=()=>{
-avatarImg.src=r.result;
-save();
 }
-r.readAsDataURL(e.target.files[0]);
-};
 
-/* CASE */
-const items=[
-{name:"AK-47",class:"common"},
-{name:"M4",class:"rare"},
-{name:"AWP",class:"epic"},
-{name:"Knife",class:"legendary"}
-];
-
-function showCases(){
-main.innerHTML=`
-<div class="case" onclick="openCase()">📦 Відкрити кейс</div>
-
-<div class="opening">
-<div class="pointer"></div>
-<div id="items" class="items"></div>
-</div>
-
-<div id="result"></div>
-`;
-generate();
+/* SHOP */
+function shop(){
+main.innerHTML="";
+[50,100,200].forEach(price=>{
+let d=document.createElement("div");
+d.className="caseBox";
+d.innerHTML=`Case ${price}💰 <button onclick="openCase(${price})">Open</button>`;
+main.appendChild(d);
+});
 }
 
 /* GENERATE */
-function generate(){
+function gen(){
 let c=document.getElementById("items");
 c.innerHTML="";
 for(let i=0;i<50;i++){
 let it=items[Math.floor(Math.random()*items.length)];
 let d=document.createElement("div");
-d.className="item "+it.class;
+d.className="item "+it.rarity;
 d.innerText=it.name;
 c.appendChild(d);
 }
 }
 
-/* OPEN CASE FIXED */
-function openCase(){
-generate();
+/* OPEN CASE */
+function openCase(price){
+if(coins<price)return;
+
+coins-=price;
+
+main.innerHTML=`
+<div class="roulette">
+<div class="pointer"></div>
+<div id="items" class="items"></div>
+</div>
+<div id="res"></div>
+`;
+
+gen();
+
 let c=document.getElementById("items");
 
 let win=40;
-let offset=(win*80)-160;
+let offset=(win*80)-150;
 
 c.style.transition="none";
 c.style.transform="translateX(0px)";
@@ -306,51 +329,105 @@ c.style.transform=`translateX(-${offset}px)`;
 setTimeout(()=>{
 let item=c.children[win].innerText;
 
-/* FIX: ALWAYS ADD GOLD */
-inventory.push({name:item});
-balance += 10;
+inv.push({name:item,price:Math.floor(Math.random()*100)+20});
+coins+=20;
 
-document.getElementById("result").innerText="🎉 "+item;
-
+addXP();
 update();
+
+document.getElementById("res").innerText="🎉 "+item;
 },4000);
 }
 
 /* INVENTORY */
-function showInventory(){
-main.innerHTML="<b>Інвентар</b>";
-inventory.forEach((i,idx)=>{
+function inventoryUI(){
+main.innerHTML="";
+inv.forEach((i,idx)=>{
 let d=document.createElement("div");
 d.className="invItem";
-d.innerHTML=i.name+" <button onclick='sell("+idx+")'>💰</button>";
+d.innerHTML=`${i.name} 💰${i.price} 
+<button onclick="sell(${idx})">Sell</button>`;
 main.appendChild(d);
 });
 }
 
+/* SELL */
 function sell(i){
-inventory.splice(i,1);
-balance+=20;
+coins+=inv[i].price;
+inv.splice(i,1);
 update();
-showInventory();
+inventoryUI();
 }
 
-/* CLICKER */
-function showClicker(){
-main.innerHTML=`
-<button class="clickBtn" onclick="click()">💰</button>
-`;
+/* MARKET */
+function marketUI(){
+main.innerHTML="<h3>💱 Market</h3>";
+
+market.forEach((m,idx)=>{
+let d=document.createElement("div");
+d.className="invItem";
+d.innerHTML=`${m.name} 💰${m.price}
+<button onclick="buy(${idx})">Buy</button>`;
+main.appendChild(d);
+});
+
+main.innerHTML += "<hr><h4>Your Inventory</h4>";
+
+inv.forEach((i,idx)=>{
+let d=document.createElement("div");
+d.className="invItem";
+d.innerHTML=`${i.name} 💰${i.price}
+<button onclick="list(${idx})">List</button>`;
+main.appendChild(d);
+});
 }
 
-function click(){
-balance+=5;
+/* LIST TO MARKET */
+function list(i){
+market.push(inv[i]);
+inv.splice(i,1);
+save();
+marketUI();
+}
+
+/* BUY */
+function buy(i){
+if(coins<market[i].price) return;
+
+coins-=market[i].price;
+inv.push(market[i]);
+market.splice(i,1);
+
 update();
+marketUI();
 }
 
-/* START */
+/* LOAD AVATAR */
+avatar.onchange=e=>{
+let r=new FileReader();
+r.onload=()=>{
+avatarImg.src=r.result;
+save();
+}
+r.readAsDataURL(e.target.files[0]);
+};
+
+nick.oninput=save;
+
+/* INIT */
+function init(){
+coinsEl.innerText=coins;
+lvlEl.innerText=lvl;
 setTimeout(()=>{
-loading.style.display="none";
-showCases();
+loading.classList.add("fadeOut");
+shop();
+update();
 },2000);
+}
+init();
+
+/* AUTO SAVE */
+setInterval(save,2000);
 </script>
 
 </body>
