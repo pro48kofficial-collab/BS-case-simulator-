@@ -3,31 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Case Game</title>
+<title>Case Game PRO</title>
 
 <style>
 body{
 margin:0;
 font-family:Arial;
-color:white;
 background:#05060a;
-}
-
-/* BACKGROUND */
-body::before{
-content:"";
-position:fixed;
-inset:0;
-background:url("https://images.unsplash.com/photo-1601758123927-1962c2b6d9a3?auto=format&fit=crop&w=1400&q=80");
-background-size:cover;
-opacity:0.2;
-z-index:-1;
+color:white;
 }
 
 /* LOADING */
 #loading{
-position:fixed;
-inset:0;
+position:fixed;inset:0;
 background:#000;
 display:flex;
 flex-direction:column;
@@ -36,48 +24,31 @@ align-items:center;
 z-index:9999;
 }
 .loader{
-width:60px;height:60px;
+width:55px;height:55px;
 border:4px solid #222;
 border-top:4px solid cyan;
 border-radius:50%;
 animation:spin 1s linear infinite;
-margin-bottom:10px;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.fadeOut{
-opacity:0;
-visibility:hidden;
-transition:0.5s;
-}
+.fade{opacity:0;visibility:hidden;transition:.5s}
 
 /* TOP */
 .top{
 position:fixed;
-top:10px;
-left:10px;
+top:10px;left:10px;
 display:flex;
-gap:8px;
+gap:10px;
 align-items:center;
-z-index:5;
 }
 
 #avatarImg{
-width:45px;
-height:45px;
+width:40px;height:40px;
 border-radius:50%;
-object-fit:cover;
+background:#222;
 border:2px solid cyan;
 }
 
-#nick{
-width:90px;
-padding:5px;
-background:#111;
-border:1px solid cyan;
-color:white;
-}
-
-/* STATS */
 .stats{
 position:fixed;
 top:10px;
@@ -85,15 +56,6 @@ right:10px;
 background:#111;
 padding:8px;
 border:1px solid cyan;
-border-radius:8px;
-}
-
-/* LEVEL */
-.level{
-position:fixed;
-top:70px;
-right:10px;
-color:cyan;
 }
 
 /* MENU */
@@ -103,72 +65,31 @@ bottom:0;
 width:100%;
 display:flex;
 background:#111;
-border-top:1px solid cyan;
 }
 .menu button{
 flex:1;
 padding:12px;
-background:none;
 border:none;
+background:none;
 color:white;
 }
 
 /* MAIN */
 .center{
-padding-top:90px;
-padding-bottom:70px;
-display:flex;
-flex-direction:column;
-align-items:center;
-}
-
-/* CASE */
-.caseBox{
-border:1px solid cyan;
-padding:10px;
-margin:5px;
-width:90%;
+padding-top:80px;
+padding-bottom:60px;
 text-align:center;
 }
 
-/* ROULETTE */
-.roulette{
-width:320px;
-overflow:hidden;
-border:2px solid cyan;
-position:relative;
-margin-top:10px;
-}
-.items{
-display:flex;
-transition:transform 4s cubic-bezier(0.1,0.7,0.1,1);
-}
-.item{
-min-width:80px;
-height:80px;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:12px;
-}
-.common{background:#555}
-.rare{background:#3b82f6}
-.epic{background:#a855f7}
-.legendary{background:#f59e0b}
-
-.pointer{
-position:absolute;
-left:50%;
-top:0;
-transform:translateX(-50%);
-width:3px;
-height:100%;
-background:red;
+/* BOX */
+.caseBox{
+margin:8px;
+padding:10px;
+border:1px solid cyan;
 }
 
-/* INVENTORY / MARKET */
+/* INVENTORY */
 .invItem{
-background:#111;
 margin:5px;
 padding:8px;
 border:1px solid cyan;
@@ -176,7 +97,7 @@ display:flex;
 justify-content:space-between;
 }
 
-/* CLICKER */
+/* CLICK */
 .clickBtn{
 font-size:40px;
 background:none;
@@ -198,19 +119,15 @@ text-shadow:0 0 10px gold;
 <!-- PROFILE -->
 <div class="top">
 <img id="avatarImg">
-<div>
-<input id="nick" placeholder="Nick"><br>
+<input id="nick" placeholder="Nick">
 <input type="file" id="avatar">
-</div>
 </div>
 
 <!-- STATS -->
 <div class="stats">
-💰 <span id="coins">0</span><br>
+💰 <span id="coins">100</span><br>
 ⭐ Lv <span id="lvl">1</span>
 </div>
-
-<div class="level" id="exp">EXP: 0/100</div>
 
 <!-- MAIN -->
 <div class="center" id="main"></div>
@@ -225,20 +142,15 @@ text-shadow:0 0 10px gold;
 
 <script>
 /* DATA */
-let coins=+localStorage.getItem("coins")||100;
-let xp=+localStorage.getItem("xp")||0;
-let lvl=+localStorage.getItem("lvl")||1;
+let coins = +localStorage.getItem("coins") || 100;
+let xp = +localStorage.getItem("xp") || 0;
+let lvl = +localStorage.getItem("lvl") || 1;
 
-let inv=JSON.parse(localStorage.getItem("inv"))||[];
-let market=JSON.parse(localStorage.getItem("market"))||[];
+let inv = JSON.parse(localStorage.getItem("inv")) || [];
+let market = JSON.parse(localStorage.getItem("market")) || [];
 
 /* ITEMS */
-const items=[
-{name:"AK-47",rarity:"common"},
-{name:"M4",rarity:"rare"},
-{name:"AWP",rarity:"epic"},
-{name:"Knife",rarity:"legendary"}
-];
+const items = ["AK-47","M4","AWP","Knife"];
 
 /* SAVE */
 function save(){
@@ -251,18 +163,17 @@ localStorage.setItem("market",JSON.stringify(market));
 
 /* UPDATE */
 function update(){
-coinsEl.innerText=coins;
-lvlEl.innerText=lvl;
-exp.innerText=`EXP: ${xp}/100`;
+coinsEl.innerText = coins;
+lvlEl.innerText = lvl;
 save();
 }
 
 /* XP */
 function addXP(){
-xp+=10;
-if(xp>=100){
+xp += 10;
+if(xp >= 100){
 lvl++;
-xp=0;
+xp = 0;
 }
 }
 
@@ -275,77 +186,35 @@ update();
 
 /* SHOP */
 function shop(){
-main.innerHTML="";
-[50,100,200].forEach(price=>{
-let d=document.createElement("div");
-d.className="caseBox";
-d.innerHTML=`Case ${price}💰 <button onclick="openCase(${price})">Open</button>`;
-main.appendChild(d);
-});
-}
-
-/* GENERATE */
-function gen(){
-let c=document.getElementById("items");
-c.innerHTML="";
-for(let i=0;i<50;i++){
-let it=items[Math.floor(Math.random()*items.length)];
-let d=document.createElement("div");
-d.className="item "+it.rarity;
-d.innerText=it.name;
-c.appendChild(d);
-}
-}
-
-/* OPEN CASE */
-function openCase(price){
-if(coins<price)return;
-
-coins-=price;
-
-main.innerHTML=`
-<div class="roulette">
-<div class="pointer"></div>
-<div id="items" class="items"></div>
-</div>
-<div id="res"></div>
+main.innerHTML = `
+<div class="caseBox" onclick="openCase()">📦 Open Case (10💰)</div>
 `;
+}
 
-gen();
+/* CASE */
+function openCase(){
+if(coins < 10) return;
 
-let c=document.getElementById("items");
+coins -= 10;
 
-let win=40;
-let offset=(win*80)-150;
+let win = items[Math.floor(Math.random()*items.length)];
+inv.push({name:win,price:Math.floor(Math.random()*50)+10});
 
-c.style.transition="none";
-c.style.transform="translateX(0px)";
-
-setTimeout(()=>{
-c.style.transition="transform 4s cubic-bezier(0.1,0.7,0.1,1)";
-c.style.transform=`translateX(-${offset}px)`;
-},50);
-
-setTimeout(()=>{
-let item=c.children[win].innerText;
-
-inv.push({name:item,price:Math.floor(Math.random()*100)+20});
-coins+=20;
+coins += 5;
 
 addXP();
 update();
 
-document.getElementById("res").innerText="🎉 "+item;
-},4000);
+alert("Випало: " + win);
 }
 
 /* INVENTORY */
 function inventoryUI(){
-main.innerHTML="";
+main.innerHTML = "";
 inv.forEach((i,idx)=>{
-let d=document.createElement("div");
-d.className="invItem";
-d.innerHTML=`${i.name} 💰${i.price} 
+let d = document.createElement("div");
+d.className = "invItem";
+d.innerHTML = `${i.name} 💰${i.price}
 <button onclick="sell(${idx})">Sell</button>`;
 main.appendChild(d);
 });
@@ -353,7 +222,7 @@ main.appendChild(d);
 
 /* SELL */
 function sell(i){
-coins+=inv[i].price;
+coins += inv[i].price;
 inv.splice(i,1);
 update();
 inventoryUI();
@@ -361,20 +230,20 @@ inventoryUI();
 
 /* MARKET */
 function marketUI(){
-main.innerHTML="<h3>💱 Market</h3>";
+main.innerHTML = "<h3>Market</h3>";
 
 market.forEach((m,idx)=>{
-let d=document.createElement("div");
+let d = document.createElement("div");
 d.className="invItem";
 d.innerHTML=`${m.name} 💰${m.price}
 <button onclick="buy(${idx})">Buy</button>`;
 main.appendChild(d);
 });
 
-main.innerHTML += "<hr><h4>Your Inventory</h4>";
+main.innerHTML += "<hr><h4>Your items</h4>";
 
 inv.forEach((i,idx)=>{
-let d=document.createElement("div");
+let d = document.createElement("div");
 d.className="invItem";
 d.innerHTML=`${i.name} 💰${i.price}
 <button onclick="list(${idx})">List</button>`;
@@ -382,7 +251,7 @@ main.appendChild(d);
 });
 }
 
-/* LIST TO MARKET */
+/* LIST */
 function list(i){
 market.push(inv[i]);
 inv.splice(i,1);
@@ -392,17 +261,17 @@ marketUI();
 
 /* BUY */
 function buy(i){
-if(coins<market[i].price) return;
+if(coins < market[i].price) return;
 
-coins-=market[i].price;
+coins -= market[i].price;
 inv.push(market[i]);
-market.splice(i,1);
 
+market.splice(i,1);
 update();
 marketUI();
 }
 
-/* LOAD AVATAR */
+/* AVATAR */
 avatar.onchange=e=>{
 let r=new FileReader();
 r.onload=()=>{
@@ -414,21 +283,15 @@ r.readAsDataURL(e.target.files[0]);
 
 nick.oninput=save;
 
-/* INIT */
-function init(){
-coinsEl.innerText=coins;
-lvlEl.innerText=lvl;
+/* START */
+window.onload=()=>{
 setTimeout(()=>{
-loading.classList.add("fadeOut");
+loading.classList.add("fade");
 shop();
 update();
-},2000);
+},1200);
 }
-init();
-
-/* AUTO SAVE */
-setInterval(save,2000);
 </script>
 
 </body>
-  </html>
+</html>
