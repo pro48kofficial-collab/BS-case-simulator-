@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Case Game FULL</title>
+<title>Case Game FIXED</title>
 
 <style>
 body{
@@ -24,7 +24,7 @@ align-items:center;
 z-index:9999;
 }
 .loader{
-width:55px;height:55px;
+width:50px;height:50px;
 border:4px solid #222;
 border-top:4px solid cyan;
 border-radius:50%;
@@ -36,19 +36,32 @@ animation:spin 1s linear infinite;
 /* TOP */
 .top{
 position:fixed;
-top:10px;left:10px;
+top:10px;
+left:10px;
 display:flex;
 gap:10px;
 align-items:center;
+z-index:10;
 }
 
 #avatarImg{
-width:40px;height:40px;
+width:45px;
+height:45px;
 border-radius:50%;
-border:2px solid cyan;
 background:#222;
+border:2px solid cyan;
+object-fit:cover;
 }
 
+#nick{
+width:90px;
+background:#111;
+border:1px solid cyan;
+color:white;
+padding:5px;
+}
+
+/* STATS */
 .stats{
 position:fixed;
 top:10px;
@@ -58,34 +71,42 @@ padding:8px;
 border:1px solid cyan;
 }
 
-/* MENU */
+/* MAIN */
+.center{
+padding-top:90px;
+padding-bottom:80px;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:10px;
+}
+
+/* BUTTON FIX (no overlap) */
 .menu{
 position:fixed;
 bottom:0;
 width:100%;
 display:flex;
 background:#111;
+border-top:1px solid cyan;
 }
+
 .menu button{
 flex:1;
 padding:12px;
 border:none;
 background:none;
 color:white;
-}
-
-/* MAIN */
-.center{
-padding-top:80px;
-padding-bottom:70px;
-text-align:center;
+font-size:14px;
 }
 
 /* CASE */
 .caseBox{
-margin:8px;
-padding:10px;
+padding:12px;
 border:1px solid cyan;
+width:90%;
+text-align:center;
+border-radius:8px;
 }
 
 /* INVENTORY */
@@ -104,40 +125,7 @@ background:none;
 border:none;
 color:gold;
 text-shadow:0 0 10px gold;
-}
-
-/* ROULETTE */
-.roulette{
-width:320px;
-overflow:hidden;
-border:2px solid cyan;
-position:relative;
-margin:10px auto;
-}
-.items{
-display:flex;
-transition:transform 4s cubic-bezier(0.1,0.7,0.1,1);
-}
-.item{
-min-width:80px;
-height:80px;
-display:flex;
-align-items:center;
-justify-content:center;
-}
-.common{background:#555}
-.rare{background:#3b82f6}
-.epic{background:#a855f7}
-.legendary{background:#f59e0b}
-
-.pointer{
-position:absolute;
-left:50%;
-top:0;
-transform:translateX(-50%);
-width:3px;
-height:100%;
-background:red;
+cursor:pointer;
 }
 </style>
 </head>
@@ -153,213 +141,102 @@ Loading...
 <!-- PROFILE -->
 <div class="top">
 <img id="avatarImg">
-<input id="nick" placeholder="Nick">
+<div>
+<input id="nick" placeholder="Nick"><br>
 <input type="file" id="avatar">
+</div>
 </div>
 
 <!-- STATS -->
 <div class="stats">
-💰 <span id="coins">100</span><br>
-⭐ Lv <span id="lvl">1</span>
+💰 <span id="coins">100</span>
 </div>
 
+<!-- MAIN -->
 <div class="center" id="main"></div>
 
 <!-- MENU -->
 <div class="menu">
-<button onclick="shop()">Shop</button>
-<button onclick="invUI()">Inv</button>
+<button onclick="shop()">Cases</button>
+<button onclick="invUI()">Inventory</button>
 <button onclick="clicker()">💰</button>
-<button onclick="marketUI()">Market</button>
 </div>
 
 <script>
 
 /* DATA */
-let coins = +localStorage.getItem("coins") || 100;
-let xp = +localStorage.getItem("xp") || 0;
-let lvl = +localStorage.getItem("lvl") || 1;
+let coins = 100;
+let inv = [];
 
-let inv = JSON.parse(localStorage.getItem("inv")) || [];
-let market = JSON.parse(localStorage.getItem("market")) || [];
+/* ELEMENTS */
+let main;
 
-/* ITEMS */
-const items = [
-{name:"AK-47",rarity:"common"},
-{name:"M4",rarity:"rare"},
-{name:"AWP",rarity:"epic"},
-{name:"Knife",rarity:"legendary"}
-];
-
-/* SAVE */
-function save(){
-localStorage.setItem("coins",coins);
-localStorage.setItem("xp",xp);
-localStorage.setItem("lvl",lvl);
-localStorage.setItem("inv",JSON.stringify(inv));
-localStorage.setItem("market",JSON.stringify(market));
-}
-
-/* UPDATE */
+/* UPDATE UI */
 function update(){
-coinsEl.innerText = coins;
-lvlEl.innerText = lvl;
-save();
+document.getElementById("coins").innerText = coins;
 }
 
-/* XP */
-function addXP(){
-xp += 10;
-if(xp >= 100){
-lvl++;
-xp = 0;
-}
-}
-
-/* CLICKER */
+/* CLICKER FIXED */
 function clicker(){
 coins++;
-addXP();
 update();
 }
 
 /* SHOP */
 function shop(){
-main.innerHTML=`
+main.innerHTML = `
 <div class="caseBox" onclick="openCase()">📦 Open Case (10💰)</div>
 `;
 }
 
-/* CASE */
+/* CASE FIXED */
 function openCase(){
 if(coins < 10) return;
 
 coins -= 10;
 
-main.innerHTML=`
-<div class="roulette">
-<div class="pointer"></div>
-<div id="strip" class="items"></div>
-</div>
-<div id="res"></div>
-`;
+let items = ["AK-47","M4","AWP","Knife"];
+let win = items[Math.floor(Math.random()*items.length)];
 
-let strip=document.getElementById("strip");
-strip.innerHTML="";
+inv.push(win);
 
-for(let i=0;i<40;i++){
-let it = items[Math.floor(Math.random()*items.length)];
-let d=document.createElement("div");
-d.className="item "+it.rarity;
-d.innerText=it.name;
-strip.appendChild(d);
-}
-
-let win=30;
-let offset=(win*80)-150;
-
-setTimeout(()=>{
-strip.style.transform=`translateX(-${offset}px)`;
-},50);
-
-setTimeout(()=>{
-let item=strip.children[win].innerText;
-
-inv.push({name:item,price:Math.floor(Math.random()*50)+10});
-coins += 15;
-
-addXP();
 update();
 
-document.getElementById("res").innerText="🎉 "+item;
-},4000);
+alert("Випало: " + win);
 }
 
 /* INVENTORY */
 function invUI(){
-main.innerHTML="";
-inv.forEach((i,idx)=>{
+main.innerHTML = "";
+inv.forEach(i=>{
 let d=document.createElement("div");
 d.className="invItem";
-d.innerHTML=`${i.name} 💰${i.price}
-<button onclick="sell(${idx})">Sell</button>`;
+d.innerText=i;
 main.appendChild(d);
 });
 }
 
-/* SELL */
-function sell(i){
-coins += inv[i].price;
-inv.splice(i,1);
-update();
-invUI();
-}
-
-/* MARKET */
-function marketUI(){
-main.innerHTML="<h3>Market</h3>";
-
-market.forEach((m,idx)=>{
-let d=document.createElement("div");
-d.className="invItem";
-d.innerHTML=`${m.name} 💰${m.price}
-<button onclick="buy(${idx})">Buy</button>`;
-main.appendChild(d);
-});
-
-main.innerHTML += "<hr><h4>Your items</h4>";
-
-inv.forEach((i,idx)=>{
-let d=document.createElement("div");
-d.className="invItem";
-d.innerHTML=`${i.name} 💰${i.price}
-<button onclick="list(${idx})">List</button>`;
-main.appendChild(d);
-});
-}
-
-/* LIST */
-function list(i){
-market.push(inv[i]);
-inv.splice(i,1);
-save();
-marketUI();
-}
-
-/* BUY */
-function buy(i){
-if(coins < market[i].price) return;
-
-coins -= market[i].price;
-inv.push(market[i]);
-
-market.splice(i,1);
-update();
-marketUI();
-}
-
-/* AVATAR */
-avatar.onchange=e=>{
-let r=new FileReader();
-r.onload=()=>{
-avatarImg.src=r.result;
-save();
+/* AVATAR FIX */
+avatar.onchange = (e)=>{
+let r = new FileReader();
+r.onload = ()=>{
+avatarImg.src = r.result;
 }
 r.readAsDataURL(e.target.files[0]);
 };
 
-nick.oninput=save;
+/* INIT SAFE */
+window.onload = ()=>{
+main = document.getElementById("main");
 
-/* START */
-window.onload=()=>{
 setTimeout(()=>{
 loading.classList.add("fade");
 shop();
 update();
-},1500);
-}
+},1200);
+};
 
 </script>
 
 </body>
-  </html>
+</html>
