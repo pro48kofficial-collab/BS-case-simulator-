@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Case Game PRO</title>
+<title>Case Game FULL</title>
 
 <style>
 body{
@@ -45,8 +45,8 @@ align-items:center;
 #avatarImg{
 width:40px;height:40px;
 border-radius:50%;
-background:#222;
 border:2px solid cyan;
+background:#222;
 }
 
 .stats{
@@ -77,11 +77,11 @@ color:white;
 /* MAIN */
 .center{
 padding-top:80px;
-padding-bottom:60px;
+padding-bottom:70px;
 text-align:center;
 }
 
-/* BOX */
+/* CASE */
 .caseBox{
 margin:8px;
 padding:10px;
@@ -97,13 +97,47 @@ display:flex;
 justify-content:space-between;
 }
 
-/* CLICK */
+/* CLICKER */
 .clickBtn{
 font-size:40px;
 background:none;
 border:none;
 color:gold;
 text-shadow:0 0 10px gold;
+}
+
+/* ROULETTE */
+.roulette{
+width:320px;
+overflow:hidden;
+border:2px solid cyan;
+position:relative;
+margin:10px auto;
+}
+.items{
+display:flex;
+transition:transform 4s cubic-bezier(0.1,0.7,0.1,1);
+}
+.item{
+min-width:80px;
+height:80px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+.common{background:#555}
+.rare{background:#3b82f6}
+.epic{background:#a855f7}
+.legendary{background:#f59e0b}
+
+.pointer{
+position:absolute;
+left:50%;
+top:0;
+transform:translateX(-50%);
+width:3px;
+height:100%;
+background:red;
 }
 </style>
 </head>
@@ -113,7 +147,7 @@ text-shadow:0 0 10px gold;
 <!-- LOADING -->
 <div id="loading">
 <div class="loader"></div>
-Загрузка...
+Loading...
 </div>
 
 <!-- PROFILE -->
@@ -129,18 +163,18 @@ text-shadow:0 0 10px gold;
 ⭐ Lv <span id="lvl">1</span>
 </div>
 
-<!-- MAIN -->
 <div class="center" id="main"></div>
 
 <!-- MENU -->
 <div class="menu">
 <button onclick="shop()">Shop</button>
-<button onclick="inventoryUI()">Inv</button>
+<button onclick="invUI()">Inv</button>
 <button onclick="clicker()">💰</button>
 <button onclick="marketUI()">Market</button>
 </div>
 
 <script>
+
 /* DATA */
 let coins = +localStorage.getItem("coins") || 100;
 let xp = +localStorage.getItem("xp") || 0;
@@ -150,7 +184,12 @@ let inv = JSON.parse(localStorage.getItem("inv")) || [];
 let market = JSON.parse(localStorage.getItem("market")) || [];
 
 /* ITEMS */
-const items = ["AK-47","M4","AWP","Knife"];
+const items = [
+{name:"AK-47",rarity:"common"},
+{name:"M4",rarity:"rare"},
+{name:"AWP",rarity:"epic"},
+{name:"Knife",rarity:"legendary"}
+];
 
 /* SAVE */
 function save(){
@@ -186,7 +225,7 @@ update();
 
 /* SHOP */
 function shop(){
-main.innerHTML = `
+main.innerHTML=`
 <div class="caseBox" onclick="openCase()">📦 Open Case (10💰)</div>
 `;
 }
@@ -197,24 +236,52 @@ if(coins < 10) return;
 
 coins -= 10;
 
-let win = items[Math.floor(Math.random()*items.length)];
-inv.push({name:win,price:Math.floor(Math.random()*50)+10});
+main.innerHTML=`
+<div class="roulette">
+<div class="pointer"></div>
+<div id="strip" class="items"></div>
+</div>
+<div id="res"></div>
+`;
 
-coins += 5;
+let strip=document.getElementById("strip");
+strip.innerHTML="";
+
+for(let i=0;i<40;i++){
+let it = items[Math.floor(Math.random()*items.length)];
+let d=document.createElement("div");
+d.className="item "+it.rarity;
+d.innerText=it.name;
+strip.appendChild(d);
+}
+
+let win=30;
+let offset=(win*80)-150;
+
+setTimeout(()=>{
+strip.style.transform=`translateX(-${offset}px)`;
+},50);
+
+setTimeout(()=>{
+let item=strip.children[win].innerText;
+
+inv.push({name:item,price:Math.floor(Math.random()*50)+10});
+coins += 15;
 
 addXP();
 update();
 
-alert("Випало: " + win);
+document.getElementById("res").innerText="🎉 "+item;
+},4000);
 }
 
 /* INVENTORY */
-function inventoryUI(){
-main.innerHTML = "";
+function invUI(){
+main.innerHTML="";
 inv.forEach((i,idx)=>{
-let d = document.createElement("div");
-d.className = "invItem";
-d.innerHTML = `${i.name} 💰${i.price}
+let d=document.createElement("div");
+d.className="invItem";
+d.innerHTML=`${i.name} 💰${i.price}
 <button onclick="sell(${idx})">Sell</button>`;
 main.appendChild(d);
 });
@@ -225,15 +292,15 @@ function sell(i){
 coins += inv[i].price;
 inv.splice(i,1);
 update();
-inventoryUI();
+invUI();
 }
 
 /* MARKET */
 function marketUI(){
-main.innerHTML = "<h3>Market</h3>";
+main.innerHTML="<h3>Market</h3>";
 
 market.forEach((m,idx)=>{
-let d = document.createElement("div");
+let d=document.createElement("div");
 d.className="invItem";
 d.innerHTML=`${m.name} 💰${m.price}
 <button onclick="buy(${idx})">Buy</button>`;
@@ -243,7 +310,7 @@ main.appendChild(d);
 main.innerHTML += "<hr><h4>Your items</h4>";
 
 inv.forEach((i,idx)=>{
-let d = document.createElement("div");
+let d=document.createElement("div");
 d.className="invItem";
 d.innerHTML=`${i.name} 💰${i.price}
 <button onclick="list(${idx})">List</button>`;
@@ -289,9 +356,10 @@ setTimeout(()=>{
 loading.classList.add("fade");
 shop();
 update();
-},1200);
+},1500);
 }
+
 </script>
 
 </body>
-</html>
+  </html>
