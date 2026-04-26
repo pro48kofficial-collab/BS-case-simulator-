@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Simulator</title>
+
+<style>
+body{margin:0;background:#0b0f1a;color:white;font-family:Arial}
+
+/* LOADING */
+#loading{
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:#000;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:30px;
+  animation:fade 2s forwards;
+}
+@keyframes fade{
+  to{opacity:0;visibility:hidden}
+}
+
+/* TOP */
+.top{
+  position:fixed;
+  top:10px;
+  left:10px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+#avatarImg{
+  width:50px;height:50px;border-radius:50%;background:#222;
+}
+#nick{padding:5px;border-radius:6px;border:none}
+
+/* MENU */
+.menu{
+  position:fixed;
+  left:0;
+  top:80px;
+  width:150px;
+}
+.menu button{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  background:#111827;
+  border:none;
+  color:white;
+  cursor:pointer;
+}
+
+/* CENTER */
+.center{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  flex-direction:column;
+}
+
+/* CASE BUTTON */
+.case{
+  background:#111827;
+  padding:15px 30px;
+  border-radius:10px;
+  cursor:pointer;
+  margin-bottom:20px;
+}
+
+/* CS:GO STYLE */
+.case-opening{
+  width:500px;
+  overflow:hidden;
+  border:2px solid cyan;
+  position:relative;
+}
+.items{
+  display:flex;
+  transition:transform 5s cubic-bezier(0.1,0.7,0.1,1);
+}
+.item{
+  min-width:100px;
+  height:100px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+}
+
+/* RARITY */
+.common{background:gray}
+.rare{background:#3b82f6}
+.epic{background:#a855f7}
+.legendary{background:#f59e0b}
+
+/* POINTER */
+.pointer{
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:4px;
+  height:100%;
+  background:red;
+}
+
+/* INVENTORY */
+.inventory{
+  position:fixed;
+  right:10px;
+  top:10px;
+  background:#111827;
+  padding:10px;
+  max-height:300px;
+  overflow:auto;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">Загрузка...</div>
+
+<!-- TOP -->
+<div class="top">
+  <img id="avatarImg">
+  <div>
+    <input id="nick" placeholder="Нік">
+    <input type="color" id="nickColor">
+    <br>
+    <input type="file" id="avatar">
+  </div>
+</div>
+
+<!-- MENU -->
+<div class="menu">
+  <button onclick="showCases()">Кейси</button>
+  <button onclick="showInventory()">Інвентар</button>
+</div>
+
+<!-- MAIN -->
+<div class="center" id="main"></div>
+
+<!-- INVENTORY -->
+<div class="inventory" id="invBox" style="display:none"></div>
+
+<script>
+let itemsData=[
+{name:"🔫 AK-47",class:"common",chance:60},
+{name:"🔫 M4",class:"rare",chance:25},
+{name:"🎯 AWP",class:"epic",chance:10},
+{name:"🔪 Knife",class:"legendary",chance:5}
+];
+
+let inventory=JSON.parse(localStorage.getItem("inv"))||[];
+
+/* LOAD */
+nick.value=localStorage.getItem("nick")||"";
+nickColor.value=localStorage.getItem("color")||"#ffffff";
+avatarImg.src=localStorage.getItem("avatar")||"";
+
+/* SAVE */
+nick.oninput=()=>localStorage.setItem("nick",nick.value);
+nickColor.oninput=()=>{
+  nick.style.color=nickColor.value;
+  localStorage.setItem("color",nickColor.value);
+};
+
+avatar.onchange=e=>{
+let reader=new FileReader();
+reader.onload=()=>{
+avatarImg.src=reader.result;
+localStorage.setItem("avatar",reader.result);
+}
+reader.readAsDataURL(e.target.files[0]);
+};
+
+/* MENU */
+function showCases(){
+invBox.style.display="none";
+main.innerHTML=`
+<div class="case" onclick="openCase()">📦 ВІДКРИТИ КЕЙС</div>
+
+<div class="case-opening">
+  <div class="pointer"></div>
+  <div id="items" class="items"></div>
+</div>
+
+<div id="result"></div>
+`;
+generateItems();
+}
+
+function showInventory(){
+invBox.style.display="block";
+renderInv();
+}
+
+/* GENERATE STRIP */
+function generateItems(){
+let container=document.getElementById("items");
+container.innerHTML="";
+
+for(let i=0;i<60;i++){
+let item=getRandomItem();
+let div=document.createElement("div");
+div.className="item "+item.class;
+div.innerText=item.name;
+container.appendChild(div);
+}
+}
+
+/* REAL CHANCE */
+function getRandomItem(){
+let rand=Math.random()*100;
+let sum=0;
+
+for(let item of itemsData){
+sum+=item.chance;
+if(rand<=sum) return item;
+}
+}
+
+/* OPEN CASE */
+function openCase(){
+generateItems();
+
+let container=document.getElementById("items");
+
+let winIndex=50;
+let itemWidth=100;
+
+let offset=(winIndex*itemWidth) - 250;
+
+container.style.transition="none";
+container.style.transform="translateX(0px)";
+
+setTimeout(()=>{
+container.style.transition="transform 5s cubic-bezier(0.1,0.7,0.1,1)";
+container.style.transform=`translateX(-${offset}px)`;
+},50);
+
+setTimeout(()=>{
+let winItem=container.children[winIndex].innerText;
+document.getElementById("result").innerText="Випало: "+winItem;
+
+inventory.push({name:winItem});
+localStorage.setItem("inv",JSON.stringify(inventory));
+},5000);
+}
+
+/* INVENTORY */
+function renderInv(){
+invBox.innerHTML="<b>Інвентар</b><br>";
+
+inventory.forEach((i,idx)=>{
+let div=document.createElement("div");
+div.innerHTML=i.name+" 💰 <button onclick='sell("+idx+")'>Продати</button>";
+invBox.appendChild(div);
+});
+}
+
+function sell(i){
+inventory.splice(i,1);
+localStorage.setItem("inv",JSON.stringify(inventory));
+renderInv();
+}
+
+/* START */
+setTimeout(()=>{showCases()},2000);
+</script>
+
+</body>
+  </html>
