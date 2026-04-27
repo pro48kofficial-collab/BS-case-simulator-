@@ -41,41 +41,47 @@ border:4px solid #222;
 border-top:4px solid cyan;
 border-radius:50%;
 animation:spin 1s linear infinite;
-margin-bottom:10px;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.fadeOut{
-opacity:0;
-visibility:hidden;
-transition:0.5s;
+.fadeOut{opacity:0;visibility:hidden;transition:.5s}
+
+/* LEFT MENU */
+.menu{
+position:fixed;
+left:0;
+top:0;
+height:100%;
+width:80px;
+background:#111;
+display:flex;
+flex-direction:column;
+border-right:1px solid cyan;
+z-index:10;
+}
+.menu button{
+padding:15px;
+border:none;
+background:none;
+color:white;
 }
 
 /* TOP */
 .top{
 position:fixed;
 top:10px;
-left:10px;
+left:90px;
 display:flex;
-gap:8px;
+gap:10px;
 align-items:center;
-z-index:5;
 }
 
 #avatarImg{
 width:45px;
 height:45px;
 border-radius:50%;
-object-fit:cover;
 border:2px solid cyan;
 background:#222;
-}
-
-#nick{
-width:90px;
-padding:5px;
-background:#111;
-border:1px solid cyan;
-color:white;
+object-fit:cover;
 }
 
 /* STATS */
@@ -86,90 +92,25 @@ right:10px;
 background:#111;
 padding:8px;
 border:1px solid cyan;
-border-radius:8px;
-}
-
-.level{
-position:fixed;
-top:70px;
-right:10px;
-color:cyan;
-}
-
-/* MENU */
-.menu{
-position:fixed;
-bottom:0;
-width:100%;
-display:flex;
-background:#111;
-border-top:1px solid cyan;
-}
-.menu button{
-flex:1;
-padding:12px;
-background:none;
-border:none;
-color:white;
 }
 
 /* MAIN */
 .center{
-padding-top:90px;
-padding-bottom:70px;
-display:flex;
-flex-direction:column;
-align-items:center;
-gap:10px;
-}
-
-/* CASE */
-.caseBox{
-border:1px solid cyan;
-padding:10px;
-margin:5px;
-width:90%;
+margin-left:90px;
+padding-top:80px;
+padding-bottom:40px;
 text-align:center;
 }
 
-/* ROULETTE */
-.roulette{
-width:320px;
-overflow:hidden;
-border:2px solid cyan;
-position:relative;
-margin-top:10px;
-}
-.items{
-display:flex;
-transition:transform 4s cubic-bezier(0.1,0.7,0.1,1);
-}
-.item{
-min-width:80px;
-height:80px;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:12px;
-}
-.common{background:#555}
-.rare{background:#3b82f6}
-.epic{background:#a855f7}
-.legendary{background:#f59e0b}
-
-.pointer{
-position:absolute;
-left:50%;
-top:0;
-transform:translateX(-50%);
-width:3px;
-height:100%;
-background:red;
+/* BOX */
+.caseBox{
+margin:10px;
+padding:12px;
+border:1px solid cyan;
 }
 
-/* INVENTORY / MARKET */
+/* INVENTORY */
 .invItem{
-background:#111;
 margin:5px;
 padding:8px;
 border:1px solid cyan;
@@ -181,10 +122,17 @@ justify-content:space-between;
 
 <body>
 
-<!-- LOADING -->
 <div id="loading">
 <div class="loader"></div>
 Загрузка...
+</div>
+
+<!-- MENU -->
+<div class="menu">
+<button onclick="mainMenu()">🏠</button>
+<button onclick="games()">🎮</button>
+<button onclick="inventoryUI()">🎒</button>
+<button onclick="marketUI()">💱</button>
 </div>
 
 <!-- PROFILE -->
@@ -202,23 +150,13 @@ justify-content:space-between;
 ⭐ Lv <span id="lvl">1</span>
 </div>
 
-<div class="level" id="exp">EXP: 0/100</div>
-
 <!-- MAIN -->
 <div class="center" id="main"></div>
-
-<!-- MENU -->
-<div class="menu">
-<button onclick="shop()">Shop</button>
-<button onclick="inventoryUI()">Inv</button>
-<button onclick="clicker()">💰</button>
-<button onclick="marketUI()">Market</button>
-</div>
 
 <script>
 
 /* ELEMENTS */
-let coinsEl, lvlEl, expEl, mainEl, avatarInput, avatarImgEl, nickInput;
+let coinsEl, lvlEl, mainEl, avatarImgEl, avatarInput, nickInput;
 
 /* DATA */
 let coins = +localStorage.getItem("coins") || 100;
@@ -236,6 +174,13 @@ const items=[
 {name:"Knife",rarity:"legendary"}
 ];
 
+const rarityPrice={
+common:20,
+rare:50,
+epic:120,
+legendary:300
+};
+
 /* SAVE */
 function save(){
 localStorage.setItem("coins",coins);
@@ -249,24 +194,51 @@ localStorage.setItem("avatar",avatarImgEl.src);
 
 /* UPDATE */
 function update(){
-coinsEl.innerText = coins;
-lvlEl.innerText = lvl;
-expEl.innerText = `EXP: ${xp}/100`;
+coinsEl.innerText=coins;
+lvlEl.innerText=lvl;
 save();
 }
 
 /* XP */
 function addXP(){
-xp += 10;
-if(xp >= 100){
-lvl++;
-xp = 0;
+xp+=10;
+if(xp>=100){lvl++;xp=0;}
 }
+
+/* MENU */
+function mainMenu(){
+mainEl.innerHTML=`
+<h1 style="font-size:40px">NEON CASE GAME</h1>
+<div style="position:fixed;bottom:40px;right:20px">
+<button onclick="games()" style="font-size:20px;padding:15px">▶ ГРАТИ</button>
+</div>
+`;
+}
+
+/* GAMES */
+function games(){
+mainEl.innerHTML=`
+<h2>Міні ігри</h2>
+<div class="caseBox" onclick="shop()">📦 Кейси</div>
+<div class="caseBox" onclick="clickGame()">🎯 Aim Game</div>
+<div class="caseBox" onclick="clicker()">💰 Клікер</div>
+`;
 }
 
 /* CLICKER */
 function clicker(){
 coins++;
+addXP();
+update();
+}
+
+/* AIM */
+function clickGame(){
+mainEl.innerHTML=`<h3>Тицяй!</h3>
+<button onclick="hit()" style="font-size:40px">🎯</button>`;
+}
+function hit(){
+coins+=5;
 addXP();
 update();
 }
@@ -282,59 +254,30 @@ mainEl.appendChild(d);
 });
 }
 
-/* GENERATE */
-function gen(){
-let c=document.getElementById("items");
-c.innerHTML="";
-for(let i=0;i<50;i++){
-let it=items[Math.floor(Math.random()*items.length)];
-let d=document.createElement("div");
-d.className="item "+it.rarity;
-d.innerText=it.name;
-c.appendChild(d);
-}
-}
-
-/* OPEN CASE */
+/* CASE */
 function openCase(price){
-if(coins < price) return;
+if(coins<price)return;
 
-coins -= price;
+coins-=price;
 
-mainEl.innerHTML=`
-<div class="roulette">
-<div class="pointer"></div>
-<div id="items" class="items"></div>
-</div>
-<button onclick="shop()">⬅ Назад</button>
-<div id="res"></div>
-`;
-
-gen();
-
-let c=document.getElementById("items");
-let win=40;
-let offset=(win*80)-150;
-
-c.style.transition="none";
-c.style.transform="translateX(0px)";
+mainEl.innerHTML=`<h3>Відкриття...</h3>
+<button onclick="shop()">⬅ Назад</button>`;
 
 setTimeout(()=>{
-c.style.transition="transform 4s cubic-bezier(0.1,0.7,0.1,1)";
-c.style.transform=`translateX(-${offset}px)`;
-},50);
+let reward=items[Math.floor(Math.random()*items.length)];
 
-setTimeout(()=>{
-let item=c.children[win].innerText;
+inv.push({
+name:reward.name,
+rarity:reward.rarity,
+price:rarityPrice[reward.rarity]
+});
 
-inv.push({name:item,price:Math.floor(Math.random()*100)+20});
-coins += 20;
-
+coins+=10;
 addXP();
 update();
 
-document.getElementById("res").innerText="🎉 "+item;
-},4000);
+mainEl.innerHTML+=`<h2>🎉 ${reward.name}</h2>`;
+},1500);
 }
 
 /* INVENTORY */
@@ -343,7 +286,7 @@ mainEl.innerHTML="";
 inv.forEach((i,idx)=>{
 let d=document.createElement("div");
 d.className="invItem";
-d.innerHTML=`${i.name} 💰${i.price} 
+d.innerHTML=`${i.name} (${i.rarity}) 💰${i.price}
 <button onclick="sell(${idx})">Sell</button>`;
 mainEl.appendChild(d);
 });
@@ -351,7 +294,7 @@ mainEl.appendChild(d);
 
 /* SELL */
 function sell(i){
-coins += inv[i].price;
+coins+=inv[i].price;
 inv.splice(i,1);
 update();
 inventoryUI();
@@ -359,7 +302,7 @@ inventoryUI();
 
 /* MARKET */
 function marketUI(){
-mainEl.innerHTML="<h3>💱 Market</h3>";
+mainEl.innerHTML="<h3>Market</h3>";
 
 market.forEach((m,idx)=>{
 let d=document.createElement("div");
@@ -369,7 +312,7 @@ d.innerHTML=`${m.name} 💰${m.price}
 mainEl.appendChild(d);
 });
 
-mainEl.innerHTML += "<hr><h4>Your Inventory</h4>";
+mainEl.innerHTML+="<hr><h4>Your items</h4>";
 
 inv.forEach((i,idx)=>{
 let d=document.createElement("div");
@@ -390,9 +333,9 @@ marketUI();
 
 /* BUY */
 function buy(i){
-if(coins < market[i].price) return;
+if(coins<market[i].price)return;
 
-coins -= market[i].price;
+coins-=market[i].price;
 inv.push(market[i]);
 market.splice(i,1);
 
@@ -401,21 +344,20 @@ marketUI();
 }
 
 /* INIT */
-window.onload = ()=>{
-coinsEl = document.getElementById("coins");
-lvlEl = document.getElementById("lvl");
-expEl = document.getElementById("exp");
-mainEl = document.getElementById("main");
-avatarInput = document.getElementById("avatar");
-avatarImgEl = document.getElementById("avatarImg");
-nickInput = document.getElementById("nick");
+window.onload=()=>{
+coinsEl=document.getElementById("coins");
+lvlEl=document.getElementById("lvl");
+mainEl=document.getElementById("main");
+avatarImgEl=document.getElementById("avatarImg");
+avatarInput=document.getElementById("avatar");
+nickInput=document.getElementById("nick");
 
-/* LOAD PROFILE */
-nickInput.value = localStorage.getItem("nick") || "";
-avatarImgEl.src = localStorage.getItem("avatar") || "";
+/* LOAD */
+nickInput.value=localStorage.getItem("nick")||"";
+avatarImgEl.src=localStorage.getItem("avatar")||"";
 
 /* AVATAR */
-avatarInput.onchange = e=>{
+avatarInput.onchange=e=>{
 let r=new FileReader();
 r.onload=()=>{
 avatarImgEl.src=r.result;
@@ -424,14 +366,14 @@ save();
 r.readAsDataURL(e.target.files[0]);
 };
 
-nickInput.oninput = save;
+nickInput.oninput=save;
 
 /* START */
 setTimeout(()=>{
 document.getElementById("loading").classList.add("fadeOut");
-shop();
+mainMenu();
 update();
-},1500);
+},1200);
 };
 
 </script>
