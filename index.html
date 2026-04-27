@@ -13,7 +13,7 @@ color:white;
 background:#05060a;
 }
 
-/* background */
+/* BACKGROUND */
 body::before{
 content:"";
 position:fixed;
@@ -24,6 +24,32 @@ opacity:0.2;
 z-index:-1;
 }
 
+/* LOADING */
+#loading{
+position:fixed;
+inset:0;
+background:#000;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+z-index:9999;
+}
+.loader{
+width:60px;height:60px;
+border:4px solid #222;
+border-top:4px solid cyan;
+border-radius:50%;
+animation:spin 1s linear infinite;
+margin-bottom:10px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fadeOut{
+opacity:0;
+visibility:hidden;
+transition:0.5s;
+}
+
 /* TOP */
 .top{
 position:fixed;
@@ -32,20 +58,24 @@ left:10px;
 display:flex;
 gap:8px;
 align-items:center;
+z-index:5;
 }
 
 #avatarImg{
-width:45px;height:45px;
+width:45px;
+height:45px;
 border-radius:50%;
-border:2px solid cyan;
 object-fit:cover;
+border:2px solid cyan;
+background:#222;
 }
 
 #nick{
 width:90px;
+padding:5px;
 background:#111;
-color:white;
 border:1px solid cyan;
+color:white;
 }
 
 /* STATS */
@@ -59,6 +89,13 @@ border:1px solid cyan;
 border-radius:8px;
 }
 
+.level{
+position:fixed;
+top:70px;
+right:10px;
+color:cyan;
+}
+
 /* MENU */
 .menu{
 position:fixed;
@@ -68,10 +105,9 @@ display:flex;
 background:#111;
 border-top:1px solid cyan;
 }
-
 .menu button{
 flex:1;
-padding:10px;
+padding:12px;
 background:none;
 border:none;
 color:white;
@@ -79,21 +115,12 @@ color:white;
 
 /* MAIN */
 .center{
-padding-top:80px;
+padding-top:90px;
 padding-bottom:70px;
 display:flex;
 flex-direction:column;
 align-items:center;
-}
-
-/* BUTTONS */
-.btn{
-padding:10px;
-margin:5px;
-border:1px solid cyan;
-background:#111;
-color:white;
-border-radius:6px;
+gap:10px;
 }
 
 /* CASE */
@@ -121,11 +148,10 @@ transition:transform 4s cubic-bezier(0.1,0.7,0.1,1);
 min-width:80px;
 height:80px;
 display:flex;
-justify-content:center;
 align-items:center;
+justify-content:center;
 font-size:12px;
 }
-
 .common{background:#555}
 .rare{background:#3b82f6}
 .epic{background:#a855f7}
@@ -141,7 +167,7 @@ height:100%;
 background:red;
 }
 
-/* INVENTORY */
+/* INVENTORY / MARKET */
 .invItem{
 background:#111;
 margin:5px;
@@ -150,34 +176,27 @@ border:1px solid cyan;
 display:flex;
 justify-content:space-between;
 }
-
-/* CLICKER */
-.clickBtn{
-font-size:40px;
-background:none;
-border:none;
-color:gold;
-text-shadow:0 0 10px gold;
-}
-
-/* LEVEL */
-.level{
-position:fixed;
-top:60px;
-right:10px;
-color:cyan;
-}
 </style>
 </head>
 
 <body>
 
-<div class="top">
-<img id="avatarImg">
-<input id="nick" placeholder="Nick">
-<input type="file" id="avatar">
+<!-- LOADING -->
+<div id="loading">
+<div class="loader"></div>
+Загрузка...
 </div>
 
+<!-- PROFILE -->
+<div class="top">
+<img id="avatarImg">
+<div>
+<input id="nick" placeholder="Nick"><br>
+<input type="file" id="avatar">
+</div>
+</div>
+
+<!-- STATS -->
 <div class="stats">
 💰 <span id="coins">0</span><br>
 ⭐ Lv <span id="lvl">1</span>
@@ -185,24 +204,29 @@ color:cyan;
 
 <div class="level" id="exp">EXP: 0/100</div>
 
+<!-- MAIN -->
 <div class="center" id="main"></div>
 
+<!-- MENU -->
 <div class="menu">
 <button onclick="shop()">Shop</button>
 <button onclick="inventoryUI()">Inv</button>
 <button onclick="clicker()">💰</button>
-<button onclick="market()">Market</button>
+<button onclick="marketUI()">Market</button>
 </div>
 
 <script>
-/* SAVE DATA */
-let coins=+localStorage.getItem("coins")||100;
-let xp=+localStorage.getItem("xp")||0;
-let lvl=+localStorage.getItem("lvl")||1;
-let inv=JSON.parse(localStorage.getItem("inv"))||[];
 
-/* SOUND */
-const sound=new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+/* ELEMENTS */
+let coinsEl, lvlEl, expEl, mainEl, avatarInput, avatarImgEl, nickInput;
+
+/* DATA */
+let coins = +localStorage.getItem("coins") || 100;
+let xp = +localStorage.getItem("xp") || 0;
+let lvl = +localStorage.getItem("lvl") || 1;
+
+let inv = JSON.parse(localStorage.getItem("inv")) || [];
+let market = JSON.parse(localStorage.getItem("market")) || [];
 
 /* ITEMS */
 const items=[
@@ -212,24 +236,31 @@ const items=[
 {name:"Knife",rarity:"legendary"}
 ];
 
-/* UPDATE */
-function update(){
-coinsEl.innerText=coins;
-lvlEl.innerText=lvl;
-exp.innerText=`EXP: ${xp}/100`;
-
+/* SAVE */
+function save(){
 localStorage.setItem("coins",coins);
 localStorage.setItem("xp",xp);
 localStorage.setItem("lvl",lvl);
 localStorage.setItem("inv",JSON.stringify(inv));
+localStorage.setItem("market",JSON.stringify(market));
+localStorage.setItem("nick",nickInput.value);
+localStorage.setItem("avatar",avatarImgEl.src);
 }
 
-/* LEVEL SYSTEM */
+/* UPDATE */
+function update(){
+coinsEl.innerText = coins;
+lvlEl.innerText = lvl;
+expEl.innerText = `EXP: ${xp}/100`;
+save();
+}
+
+/* XP */
 function addXP(){
-xp+=10;
-if(xp>=100){
+xp += 10;
+if(xp >= 100){
 lvl++;
-xp=0;
+xp = 0;
 }
 }
 
@@ -242,108 +273,167 @@ update();
 
 /* SHOP */
 function shop(){
-main.innerHTML="";
-[50,100,200].forEach((price,i)=>{
+mainEl.innerHTML="";
+[50,100,200].forEach(price=>{
 let d=document.createElement("div");
 d.className="caseBox";
-d.innerHTML=`Case ${i+1} - ${price}💰 <button onclick="openCase(${price})">Open</button>`;
-main.appendChild(d);
+d.innerHTML=`Case ${price}💰 <button onclick="openCase(${price})">Open</button>`;
+mainEl.appendChild(d);
 });
 }
 
-/* CASE OPEN */
-function openCase(price){
-if(coins<price)return;
-
-coins-=price;
-sound.play();
-
-main.innerHTML=`
-<div class="roulette">
-<div class="pointer"></div>
-<div id="strip" class="items"></div>
-</div>
-<div id="res"></div>
-`;
-
-let strip=document.getElementById("strip");
-strip.innerHTML="";
-
+/* GENERATE */
+function gen(){
+let c=document.getElementById("items");
+c.innerHTML="";
 for(let i=0;i<50;i++){
 let it=items[Math.floor(Math.random()*items.length)];
 let d=document.createElement("div");
 d.className="item "+it.rarity;
 d.innerText=it.name;
-strip.appendChild(d);
+c.appendChild(d);
+}
 }
 
+/* OPEN CASE */
+function openCase(price){
+if(coins < price) return;
+
+coins -= price;
+
+mainEl.innerHTML=`
+<div class="roulette">
+<div class="pointer"></div>
+<div id="items" class="items"></div>
+</div>
+<button onclick="shop()">⬅ Назад</button>
+<div id="res"></div>
+`;
+
+gen();
+
+let c=document.getElementById("items");
 let win=40;
 let offset=(win*80)-150;
 
+c.style.transition="none";
+c.style.transform="translateX(0px)";
+
 setTimeout(()=>{
-strip.style.transform=`translateX(-${offset}px)`;
+c.style.transition="transform 4s cubic-bezier(0.1,0.7,0.1,1)";
+c.style.transform=`translateX(-${offset}px)`;
 },50);
 
 setTimeout(()=>{
-let item=strip.children[win].innerText;
-inv.push(item);
+let item=c.children[win].innerText;
 
-coins+=20;
+inv.push({name:item,price:Math.floor(Math.random()*100)+20});
+coins += 20;
+
 addXP();
+update();
 
 document.getElementById("res").innerText="🎉 "+item;
-update();
 },4000);
 }
 
 /* INVENTORY */
 function inventoryUI(){
-main.innerHTML="";
+mainEl.innerHTML="";
 inv.forEach((i,idx)=>{
 let d=document.createElement("div");
 d.className="invItem";
-d.innerHTML=i+" <button onclick='sell("+idx+")'>Sell</button>";
-main.appendChild(d);
+d.innerHTML=`${i.name} 💰${i.price} 
+<button onclick="sell(${idx})">Sell</button>`;
+mainEl.appendChild(d);
 });
 }
 
 /* SELL */
 function sell(i){
-coins+=30;
+coins += inv[i].price;
 inv.splice(i,1);
 update();
 inventoryUI();
 }
 
 /* MARKET */
-function market(){
-main.innerHTML=`
-<div class="caseBox">Sell items for coins</div>
-`;
+function marketUI(){
+mainEl.innerHTML="<h3>💱 Market</h3>";
+
+market.forEach((m,idx)=>{
+let d=document.createElement("div");
+d.className="invItem";
+d.innerHTML=`${m.name} 💰${m.price}
+<button onclick="buy(${idx})">Buy</button>`;
+mainEl.appendChild(d);
+});
+
+mainEl.innerHTML += "<hr><h4>Your Inventory</h4>";
+
+inv.forEach((i,idx)=>{
+let d=document.createElement("div");
+d.className="invItem";
+d.innerHTML=`${i.name} 💰${i.price}
+<button onclick="list(${idx})">List</button>`;
+mainEl.appendChild(d);
+});
 }
 
-/* LOAD AVATAR */
-avatar.onchange=e=>{
+/* LIST */
+function list(i){
+market.push(inv[i]);
+inv.splice(i,1);
+save();
+marketUI();
+}
+
+/* BUY */
+function buy(i){
+if(coins < market[i].price) return;
+
+coins -= market[i].price;
+inv.push(market[i]);
+market.splice(i,1);
+
+update();
+marketUI();
+}
+
+/* INIT */
+window.onload = ()=>{
+coinsEl = document.getElementById("coins");
+lvlEl = document.getElementById("lvl");
+expEl = document.getElementById("exp");
+mainEl = document.getElementById("main");
+avatarInput = document.getElementById("avatar");
+avatarImgEl = document.getElementById("avatarImg");
+nickInput = document.getElementById("nick");
+
+/* LOAD PROFILE */
+nickInput.value = localStorage.getItem("nick") || "";
+avatarImgEl.src = localStorage.getItem("avatar") || "";
+
+/* AVATAR */
+avatarInput.onchange = e=>{
 let r=new FileReader();
 r.onload=()=>{
-avatarImg.src=r.result;
-localStorage.setItem("avatar",r.result);
+avatarImgEl.src=r.result;
+save();
 }
 r.readAsDataURL(e.target.files[0]);
 };
 
-nick.oninput=()=>localStorage.setItem("nick",nick.value);
+nickInput.oninput = save;
 
-/* INIT */
-function init(){
-coinsEl.innerText=coins;
-lvlEl.innerText=lvl;
+/* START */
+setTimeout(()=>{
+document.getElementById("loading").classList.add("fadeOut");
 shop();
-}
-init();
+update();
+},1500);
+};
 
-/* SAVE LOOP */
-setInterval(update,1000);
 </script>
 
 </body>
