@@ -3,27 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Case Game Ultimate</title>
+<title>Neon Case Game</title>
 
 <style>
-body{margin:0;font-family:Arial;background:#0b0f14;color:white}
+body{
+margin:0;
+font-family:Arial;
+background:#0b0f14;
+color:white;
+}
+
+/* BACKGROUND */
+body::before{
+content:"";
+position:fixed;
+inset:0;
+background:url("https://images.unsplash.com/photo-1601758123927-1962c2b6d9a3?auto=format&fit=crop&w=1400&q=80");
+background-size:cover;
+opacity:0.2;
+z-index:-1;
+}
 
 /* LOADING */
 #loading{
-position:fixed;inset:0;
+position:fixed;
+inset:0;
 background:#000;
 display:flex;
 align-items:center;
 justify-content:center;
-z-index:999;
+z-index:9999;
 }
-.fade{opacity:0;visibility:hidden;transition:.5s}
 
-/* MENU LEFT */
+/* LEFT MENU */
 .menu{
 position:fixed;
-left:0;top:0;
-width:90px;height:100%;
+left:0;
+top:0;
+height:100%;
+width:90px;
 background:#111;
 display:flex;
 flex-direction:column;
@@ -31,17 +49,27 @@ border-right:1px solid #222;
 }
 .menu button{
 padding:15px;
-background:none;border:none;color:#aaa;
+background:none;
+border:none;
+color:white;
 }
 
 /* TOP */
 .top{
 position:fixed;
-top:10px;left:100px;
-display:flex;gap:10px;
+top:10px;
+left:100px;
+right:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+z-index:10;
 }
+
 #avatarImg{
-width:45px;height:45px;border-radius:50%;
+width:45px;
+height:45px;
+border-radius:50%;
 border:2px solid cyan;
 background:#222;
 }
@@ -49,42 +77,70 @@ background:#222;
 /* MAIN */
 .center{
 margin-left:100px;
-padding:20px;
+padding:100px 15px 40px;
+display:flex;
+flex-direction:column;
+gap:10px;
+max-width:500px;
 }
 
-/* BOX */
-.card{
+/* CARD */
+.box{
 background:#111;
-padding:10px;
-margin:10px;
+padding:12px;
+border:1px solid cyan;
 border-radius:10px;
+text-align:center;
+}
+
+/* BUTTON FIX */
+button{
+cursor:pointer;
+border-radius:8px;
+padding:8px;
 }
 
 /* ROULETTE */
 .roulette{
-width:320px;overflow:hidden;
-margin:auto;border:2px solid #333;
+width:320px;
+overflow:hidden;
+border:2px solid #333;
+margin:auto;
 position:relative;
 }
-.items{display:flex;transition:4s}
-.item{min-width:80px;height:80px;display:flex;align-items:center;justify-content:center}
+.items{
+display:flex;
+transition:4s cubic-bezier(.1,.7,.1,1);
+}
+.item{
+min-width:80px;
+height:80px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
 .common{background:#555}
 .rare{background:#3b82f6}
 .epic{background:#a855f7}
 .legendary{background:#f59e0b}
 .pointer{
-position:absolute;left:50%;
-width:3px;height:100%;
+position:absolute;
+left:50%;
+width:3px;
+height:100%;
 background:red;
+transform:translateX(-50%);
 }
 
-/* INV */
+/* INVENTORY */
 .inv{
 display:flex;
 justify-content:space-between;
-margin:5px;
-padding:5px;
+flex-wrap:wrap;
+gap:5px;
 border:1px solid cyan;
+padding:6px;
+margin:5px;
 }
 </style>
 </head>
@@ -93,14 +149,15 @@ border:1px solid cyan;
 
 <div id="loading">Loading...</div>
 
+<!-- MENU -->
 <div class="menu">
 <button onclick="menu()">🏠</button>
-<button onclick="cases()">📦</button>
+<button onclick="games()">🎮</button>
 <button onclick="inventoryUI()">🎒</button>
 <button onclick="marketUI()">💱</button>
-<button onclick="battle()">🔫</button>
 </div>
 
+<!-- TOP -->
 <div class="top">
 <img id="avatarImg">
 <div>
@@ -109,24 +166,30 @@ border:1px solid cyan;
 </div>
 </div>
 
+<!-- MAIN -->
 <div class="center" id="main"></div>
 
 <script>
 
 /* DATA */
-let coins=+localStorage.getItem("coins")||100;
-let inv=JSON.parse(localStorage.getItem("inv"))||[];
-let market=JSON.parse(localStorage.getItem("market"))||[];
+let coins = +localStorage.getItem("coins") || 100;
+let inv = JSON.parse(localStorage.getItem("inv")) || [];
+let market = JSON.parse(localStorage.getItem("market")) || [];
 
 /* ITEMS */
 const items=[
-{name:"AK",rarity:"common"},
+{name:"AK-47",rarity:"common"},
 {name:"M4",rarity:"rare"},
 {name:"AWP",rarity:"epic"},
-{name:"KNIFE",rarity:"legendary"}
+{name:"Knife",rarity:"legendary"}
 ];
 
-const price={common:20,rare:50,epic:120,legendary:300};
+const price={
+common:20,
+rare:50,
+epic:120,
+legendary:300
+};
 
 /* SAVE */
 function save(){
@@ -140,21 +203,38 @@ localStorage.setItem("avatar",avatarImg.src);
 /* MENU */
 function menu(){
 main.innerHTML=`
-<h1>CASE GAME</h1>
-<button onclick="cases()">📦 Кейси</button>
-<button onclick="battle()">🔫 Бій</button>
+<h1>NEON CASE GAME</h1>
+<div class="box">
+<button onclick="games()">▶ ГРАТИ</button>
+</div>
 `;
 }
 
-/* CASE */
-function cases(){
+/* GAMES */
+function games(){
 main.innerHTML=`
-<div class="card">
-<button onclick="openCase()">Відкрити кейс (50💰)</button>
-</div>`;
+<div class="box" onclick="cases()">📦 Кейси</div>
+<div class="box" onclick="battle()">🔫 Командний бій</div>
+<div class="box" onclick="clicker()">💰 Клікер</div>
+`;
 }
 
-/* OPEN */
+/* CLICKER */
+function clicker(){
+coins++;
+save();
+}
+
+/* CASES */
+function cases(){
+main.innerHTML=`
+<div class="box">
+<button onclick="openCase()">Відкрити кейс (50💰)</button>
+</div>
+`;
+}
+
+/* OPEN CASE */
 function openCase(){
 if(coins<50)return;
 coins-=50;
@@ -165,10 +245,12 @@ main.innerHTML=`
 <div id="roll" class="items"></div>
 </div>
 <div id="res"></div>
+<button onclick="cases()">⬅ Назад</button>
 `;
 
 let roll=document.getElementById("roll");
 
+/* GENERATE */
 for(let i=0;i<60;i++){
 let it=items[Math.floor(Math.random()*items.length)];
 let d=document.createElement("div");
@@ -177,20 +259,29 @@ d.innerText=it.name;
 roll.appendChild(d);
 }
 
+/* WIN */
 let win=45;
 let offset=(win*80)-150;
 
-setTimeout(()=>{roll.style.transform=`translateX(-${offset}px)`},50);
+setTimeout(()=>{
+roll.style.transform=`translateX(-${offset}px)`;
+},50);
 
 setTimeout(()=>{
 let name=roll.children[win].innerText;
 let r=items.find(i=>i.name==name);
 
-inv.push({name:name,rarity:r.rarity,price:price[r.rarity]});
+inv.push({
+name:name,
+rarity:r.rarity,
+price:price[r.rarity]
+});
+
 coins+=10;
 save();
 
-document.getElementById("res").innerHTML=`<h2>${name}</h2>`;
+document.getElementById("res").innerHTML=
+`<h2>🎉 ${name}</h2>`;
 },4000);
 }
 
@@ -202,7 +293,6 @@ main.innerHTML+=`
 <div class="inv">
 ${i.name} (${i.rarity}) 💰${i.price}
 <button onclick="sell(${idx})">Sell</button>
-<button onclick="list(${idx})">List</button>
 </div>`;
 });
 }
@@ -218,6 +308,7 @@ inventoryUI();
 /* MARKET */
 function marketUI(){
 main.innerHTML="<h3>Market</h3>";
+
 market.forEach((m,idx)=>{
 main.innerHTML+=`
 <div class="inv">
@@ -225,14 +316,6 @@ ${m.name} 💰${m.price}
 <button onclick="buy(${idx})">Buy</button>
 </div>`;
 });
-}
-
-/* LIST */
-function list(i){
-market.push(inv[i]);
-inv.splice(i,1);
-save();
-inventoryUI();
 }
 
 /* BUY */
@@ -243,6 +326,14 @@ inv.push(market[i]);
 market.splice(i,1);
 save();
 marketUI();
+}
+
+/* LIST */
+function list(i){
+market.push(inv[i]);
+inv.splice(i,1);
+save();
+inventoryUI();
 }
 
 /* BATTLE */
@@ -264,7 +355,10 @@ save();
 /* AVATAR */
 avatar.onchange=e=>{
 let r=new FileReader();
-r.onload=()=>{avatarImg.src=r.result;save();}
+r.onload=()=>{
+avatarImg.src=r.result;
+save();
+}
 r.readAsDataURL(e.target.files[0]);
 };
 
@@ -274,7 +368,7 @@ nick.value=localStorage.getItem("nick")||"";
 avatarImg.src=localStorage.getItem("avatar")||"";
 
 setTimeout(()=>{
-loading.classList.add("fade");
+loading.style.display="none";
 menu();
 },1200);
 };
