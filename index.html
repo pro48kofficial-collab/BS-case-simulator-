@@ -39,6 +39,7 @@
         .btn:hover { opacity: 0.9; }
         .btn-bonus { background: #007bff; }
         .btn-sell { background: #dc3545; }
+        .btn-reset { background: #555; font-size: 12px; padding: 5px 10px; }
         .drop-area {
             height: 120px;
             margin: 20px 0;
@@ -67,7 +68,6 @@
             justify-content: space-between;
             background: #252525;
         }
-        /* Кольори рідкості як у БС */
         .Base { color: #b0b0b0; border-left: 5px solid #b0b0b0; }
         .Rare { color: #4b69ff; border-left: 5px solid #4b69ff; }
         .Legendary { color: #d32ce6; border-left: 5px solid #d32ce6; }
@@ -91,17 +91,15 @@
     <div class="inventory" id="inventory-list">
         <p style="color:#666; text-align:center;">Інвентар порожній</p>
     </div>
+
+    <br>
+    <button class="btn btn-reset" onclick="resetGame()">🔄 Скинути весь прогрес</button>
 </div>
 
 <script>
-    // Твої скіни зі скріншотів
     const skinsData = {
-        "Base": [
-            {name: "AK-47 | Exclusion Zone", price: 25, rarity: "Base"}
-        ],
-        "Rare": [
-            {name: "M4A1 | Bubble Gum", price: 60, rarity: "Rare"}
-        ],
+        "Base": [{name: "AK-47 | Exclusion Zone", price: 25, rarity: "Base"}],
+        "Rare": [{name: "M4A1 | Bubble Gum", price: 60, rarity: "Rare"}],
         "Legendary": [
             {name: "Bat | XLoad", price: 250, rarity: "Legendary"},
             {name: "Kunai | Overflow", price: 300, rarity: "Legendary"},
@@ -116,8 +114,15 @@
         ]
     };
 
-    let balance = 300;
-    let inventory = [];
+    // ЗАВАНТАЖЕННЯ: Пробуємо взяти збережені дані, якщо їх немає — ставимо дефолтні
+    let balance = parseInt(localStorage.getItem('bs_balance')) || 300;
+    let inventory = JSON.parse(localStorage.getItem('bs_inventory')) || [];
+
+    // Функція для збереження даних у пам'ять браузера
+    function saveGame() {
+        localStorage.setItem('bs_balance', balance);
+        localStorage.setItem('bs_inventory', JSON.stringify(inventory));
+    }
 
     function updateUI() {
         document.getElementById('balance').innerText = balance;
@@ -146,50 +151,67 @@
         }
 
         balance -= 60;
+        saveGame(); // Зберігаємо новий баланс після покупки
+        
         const dropDisplay = document.getElementById('drop-display');
         dropDisplay.style.color = "#fff";
         dropDisplay.innerText = "🎰 Крутимо кейс...";
 
         setTimeout(() => {
-            // Шанси випадіння
             const rand = Math.random() * 100;
             let selectedRarity = "Base";
 
-            if (rand < 6) selectedRarity = "Secret";         // 6%
-            else if (rand < 22) selectedRarity = "Legendary"; // 16%
-            else if (rand < 50) selectedRarity = "Rare";      // 28%
-            else selectedRarity = "Base";                     // 50%
+            if (rand < 6) selectedRarity = "Secret";
+            else if (rand < 22) selectedRarity = "Legendary";
+            else if (rand < 50) selectedRarity = "Rare";
+            else selectedRarity = "Base";
 
             const list = skinsData[selectedRarity];
             const droppedItem = list[Math.floor(Math.random() * list.length)];
 
             inventory.push(droppedItem);
             
-            // Відображаємо дроп
             dropDisplay.innerText = `🎉 ${droppedItem.name}`;
             if(selectedRarity === "Secret") dropDisplay.style.color = "#eb4b4b";
             else if(selectedRarity === "Legendary") dropDisplay.style.color = "#d32ce6";
             else if(selectedRarity === "Rare") dropDisplay.style.color = "#4b69ff";
             else dropDisplay.style.color = "#b0b0b0";
 
+            saveGame(); // Зберігаємо оновлений інвентар
             updateUI();
-        }, 800);
+        }, 600);
     }
 
     function sellItem(index) {
         balance += inventory[index].price;
         inventory.splice(index, 1);
+        saveGame(); // Зберігаємо після продажу
         updateUI();
     }
 
     function getBonus() {
-        const reward = Math.floor(Math.random() * 61) + 40; // 40-100 монет
+        const reward = Math.floor(Math.random() * 61) + 40;
         balance += reward;
         alert(`🎁 Ти отримав бонус: ${reward} монет!`);
+        saveGame(); // Зберігаємо бонусні монети
         updateUI();
     }
+
+    function resetGame() {
+        if (confirm("Ти впевнений, що хочеш обнулити баланс та інвентар?")) {
+            localStorage.removeItem('bs_balance');
+            localStorage.removeItem('bs_inventory');
+            balance = 300;
+            inventory = [];
+            document.getElementById('drop-display').innerText = "Тут з'явиться твій дроп";
+            updateUI();
+        }
+    }
+
+    // Запускаємо оновлення екрану при першому заході на сайт
+    updateUI();
 </script>
 
 </body>
-  </html>
-  
+    </html>
+    
