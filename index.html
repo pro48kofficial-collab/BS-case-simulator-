@@ -1,1 +1,195 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Strike Case Simulator</title>
+    <style>
+        body {
+            background: #121212;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 2px solid #333;
+        }
+        h1 { color: #ffd700; margin-bottom: 5px; }
+        .balance { font-size: 20px; color: #ffd700; margin: 15px 0; font-weight: bold; }
+        .btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin: 5px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-bonus { background: #007bff; }
+        .btn-sell { background: #dc3545; }
+        .drop-area {
+            height: 120px;
+            margin: 20px 0;
+            background: #151515;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            border: 2px dashed #444;
+        }
+        .inventory {
+            text-align: left;
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .item {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            background: #252525;
+        }
+        /* Кольори рідкості як у БС */
+        .Base { color: #b0b0b0; border-left: 5px solid #b0b0b0; }
+        .Rare { color: #4b69ff; border-left: 5px solid #4b69ff; }
+        .Legendary { color: #d32ce6; border-left: 5px solid #d32ce6; }
+        .Secret { color: #eb4b4b; border-left: 5px solid #eb4b4b; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h1>BLOCK STRIKE</h1>
+    <p style="color: #888; margin-top: 0;">Case Simulator (Exclusive Edition)</p>
+    
+    <div class="balance">💰 Баланс: <span id="balance">300</span> монет</div>
+    
+    <button class="btn" onclick="spinCase()">🎰 Відкрити Кейс (60 моні)</button>
+    <button class="btn btn-bonus" onclick="getBonus()">🎁 Безкоштовні монети</button>
+
+    <div class="drop-area" id="drop-display">Тут з'явиться твій дроп</div>
+
+    <h3>🎒 Твій Інвентар:</h3>
+    <div class="inventory" id="inventory-list">
+        <p style="color:#666; text-align:center;">Інвентар порожній</p>
+    </div>
+</div>
+
+<script>
+    // Твої скіни зі скріншотів
+    const skinsData = {
+        "Base": [
+            {name: "AK-47 | Exclusion Zone", price: 25, rarity: "Base"}
+        ],
+        "Rare": [
+            {name: "M4A1 | Bubble Gum", price: 60, rarity: "Rare"}
+        ],
+        "Legendary": [
+            {name: "Bat | XLoad", price: 250, rarity: "Legendary"},
+            {name: "Kunai | Overflow", price: 300, rarity: "Legendary"},
+            {name: "Bowie Knife | Neon Flake", price: 350, rarity: "Legendary"},
+            {name: "Kunai | Cyber Rainbow", price: 400, rarity: "Legendary"},
+            {name: "Bizon | Tesla Gold", price: 220, rarity: "Legendary"}
+        ],
+        "Secret": [
+            {name: "M4A1 | Dolphin Laser", price: 900, rarity: "Secret"},
+            {name: "Dual Daggers | Skull Puppets", price: 1100, rarity: "Secret"},
+            {name: "M9 Bayonet | Bio Hazard", price: 1300, rarity: "Secret"}
+        ]
+    };
+
+    let balance = 300;
+    let inventory = [];
+
+    function updateUI() {
+        document.getElementById('balance').innerText = balance;
+        const invList = document.getElementById('inventory-list');
+        
+        if (inventory.length === 0) {
+            invList.innerHTML = '<p style="color:#666; text-align:center;">Інвентар порожній</p>';
+            return;
+        }
+
+        invList.innerHTML = '';
+        inventory.forEach((item, index) => {
+            invList.innerHTML += `
+                <div class="item ${item.rarity}">
+                    <span>[${item.rarity}] ${item.name}</span>
+                    <button class="btn btn-sell" style="padding: 2px 8px; font-size: 12px; margin: 0;" onclick="sellItem(${index})">Продати (${item.price}$)</button>
+                </div>
+            `;
+        });
+    }
+
+    function spinCase() {
+        if (balance < 60) {
+            alert("❌ Недостатньо монет! Потрібно 60 монет.");
+            return;
+        }
+
+        balance -= 60;
+        const dropDisplay = document.getElementById('drop-display');
+        dropDisplay.style.color = "#fff";
+        dropDisplay.innerText = "🎰 Крутимо кейс...";
+
+        setTimeout(() => {
+            // Шанси випадіння
+            const rand = Math.random() * 100;
+            let selectedRarity = "Base";
+
+            if (rand < 6) selectedRarity = "Secret";         // 6%
+            else if (rand < 22) selectedRarity = "Legendary"; // 16%
+            else if (rand < 50) selectedRarity = "Rare";      // 28%
+            else selectedRarity = "Base";                     // 50%
+
+            const list = skinsData[selectedRarity];
+            const droppedItem = list[Math.floor(Math.random() * list.length)];
+
+            inventory.push(droppedItem);
+            
+            // Відображаємо дроп
+            dropDisplay.innerText = `🎉 ${droppedItem.name}`;
+            if(selectedRarity === "Secret") dropDisplay.style.color = "#eb4b4b";
+            else if(selectedRarity === "Legendary") dropDisplay.style.color = "#d32ce6";
+            else if(selectedRarity === "Rare") dropDisplay.style.color = "#4b69ff";
+            else dropDisplay.style.color = "#b0b0b0";
+
+            updateUI();
+        }, 800);
+    }
+
+    function sellItem(index) {
+        balance += inventory[index].price;
+        inventory.splice(index, 1);
+        updateUI();
+    }
+
+    function getBonus() {
+        const reward = Math.floor(Math.random() * 61) + 40; // 40-100 монет
+        balance += reward;
+        alert(`🎁 Ти отримав бонус: ${reward} монет!`);
+        updateUI();
+    }
+</script>
+
+</body>
+  </html>
+  
