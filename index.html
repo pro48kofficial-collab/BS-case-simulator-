@@ -1,379 +1,140 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Case Game</title>
+import random
+import time
 
-<style>
-body{
-margin:0;
-font-family:Arial;
-background:#0b0f14;
-color:white;
+# Словник скінів з твоїх зображень (1000003947.png, 1000003912.jpg, 1000003913.jpg і т.д.)
+SKINS_DATA = {
+    "Base": [
+        {"name": "AK-47 | Exclusion Zone", "price": 25},
+    ],
+    "Rare": [
+        {"name": "M4A1 | Bubble Gum", "price": 60},
+    ],
+    "Legendary": [
+        {"name": "Bat | XLoad", "price": 250},
+        {"name": "Kunai | Overflow", "price": 300},
+        {"name": "Bowie Knife | Neon Flake", "price": 350},
+        {"name": "Kunai | Cyber Rainbow", "price": 400},
+        {"name": "Bizon | Tesla Gold", "price": 220},
+    ],
+    "Secret": [
+        {"name": "M4A1 | Dolphin Laser", "price": 900},
+        {"name": "Dual Daggers | Skull Puppets", "price": 1100},
+        {"name": "M9 Bayonet | Bio Hazard", "price": 1300},
+    ]
 }
 
-/* BACKGROUND */
-body::before{
-content:"";
-position:fixed;
-inset:0;
-background:url("https://images.unsplash.com/photo-1601758123927-1962c2b6d9a3?auto=format&fit=crop&w=1400&q=80");
-background-size:cover;
-opacity:0.2;
-z-index:-1;
+# Шанси випадіння (у відсотках)
+CHANCES = {
+    "Base": 50,
+    "Rare": 28,
+    "Legendary": 16,
+    "Secret": 6
 }
 
-/* LOADING */
-#loading{
-position:fixed;
-inset:0;
-background:#000;
-display:flex;
-align-items:center;
-justify-content:center;
-z-index:9999;
+# Кольори для консолі
+COLORS = {
+    "Base": "\033[90m",       # Сірий
+    "Rare": "\033[94m",       # Синій
+    "Legendary": "\033[95m",  # Пурпурний
+    "Secret": "\033[91m",     # Червоний
+    "Gold": "\033[93m",       # Золотий
+    "END": "\033[0m"          # Скидання
 }
 
-/* LEFT MENU */
-.menu{
-position:fixed;
-left:0;
-top:0;
-height:100%;
-width:90px;
-background:#111;
-display:flex;
-flex-direction:column;
-border-right:1px solid #222;
-}
-.menu button{
-padding:15px;
-background:none;
-border:none;
-color:white;
-}
+class CaseSimulator:
+    def __init__(self):
+        self.balance = 300
+        self.case_price = 60
+        self.inventory = []
 
-/* TOP */
-.top{
-position:fixed;
-top:10px;
-left:100px;
-right:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-z-index:10;
-}
+    def spin_case(self):
+        if self.balance < self.case_price:
+            print(f"\n{COLORS['Secret']}❌ Недостатньо монет! Потрібно {self.case_price} бс-коінів.{COLORS['END']}")
+            return
 
-#avatarImg{
-width:45px;
-height:45px;
-border-radius:50%;
-border:2px solid cyan;
-background:#222;
-}
+        self.balance -= self.case_price
+        print("\n🎰 Відкриваємо кейс...")
+        
+        for _ in range(3):
+            print(".", end="", flush=True)
+            time.sleep(0.4)
+        print("\n")
 
-/* MAIN */
-.center{
-margin-left:100px;
-padding:100px 15px 40px;
-display:flex;
-flex-direction:column;
-gap:10px;
-max-width:500px;
-}
+        rarity_choices = list(CHANCES.keys())
+        rarity_weights = list(CHANCES.values())
+        dropped_rarity = random.choices(rarity_choices, weights=rarity_weights, k=1)[0]
 
-/* CARD */
-.box{
-background:#111;
-padding:12px;
-border:1px solid cyan;
-border-radius:10px;
-text-align:center;
-}
+        dropped_skin = random.choice(SKINS_DATA[dropped_rarity])
+        
+        self.inventory.append({
+            "name": dropped_skin["name"],
+            "rarity": dropped_rarity,
+            "price": dropped_skin["price"]
+        })
 
-/* BUTTON FIX */
-button{
-cursor:pointer;
-border-radius:8px;
-padding:8px;
-}
+        color = COLORS[dropped_rarity]
+        print(f"🎉 ТОБІ ВИПАЛО: {color}[{dropped_rarity}] {dropped_skin['name']}{COLORS['END']}!")
+        print(f"Ціна скіна: {COLORS['Gold']}{dropped_skin['price']} монет{COLORS['END']}")
 
-/* ROULETTE */
-.roulette{
-width:320px;
-overflow:hidden;
-border:2px solid #333;
-margin:auto;
-position:relative;
-}
-.items{
-display:flex;
-transition:4s cubic-bezier(.1,.7,.1,1);
-}
-.item{
-min-width:80px;
-height:80px;
-display:flex;
-align-items:center;
-justify-content:center;
-}
-.common{background:#555}
-.rare{background:#3b82f6}
-.epic{background:#a855f7}
-.legendary{background:#f59e0b}
-.pointer{
-position:absolute;
-left:50%;
-width:3px;
-height:100%;
-background:red;
-transform:translateX(-50%);
-}
+    def show_inventory(self):
+        if not self.inventory:
+            print(f"\n🎒 Твій інвентар порожній.")
+            return
 
-/* INVENTORY */
-.inv{
-display:flex;
-justify-content:space-between;
-flex-wrap:wrap;
-gap:5px;
-border:1px solid cyan;
-padding:6px;
-margin:5px;
-}
-</style>
-</head>
+        print(f"\n🎒 Твій Інвентар ({len(self.inventory)} предметів):")
+        for idx, item in enumerate(self.inventory, 1):
+            color = COLORS[item['rarity']]
+            print(f"{idx}. {color}[{item['rarity']}] {item['name']}{COLORS['END']} — {COLORS['Gold']}{item['price']} монет{COLORS['END']}")
 
-<body>
+    def sell_item(self):
+        if not self.inventory:
+            print("\n❌ Немає чого продавати.")
+            return
 
-<div id="loading">Loading...</div>
+        self.show_inventory()
+        try:
+            choice = int(input("\nВведіть номер предмета для продажу: ")) - 1
+            if 0 <= choice < len(self.inventory):
+                item = self.inventory.pop(choice)
+                self.balance += item['price']
+                print(f"\n✅ Продано: {item['name']} за {COLORS['Gold']}{item['price']} монет{COLORS['END']}.")
+            else:
+                print("\n❌ Невірний номер предмета.")
+        except ValueError:
+            print("\n❌ Будь ласка, введіть число.")
 
-<!-- MENU -->
-<div class="menu">
-<button onclick="menu()">🏠</button>
-<button onclick="games()">🎮</button>
-<button onclick="inventoryUI()">🎒</button>
-<button onclick="marketUI()">💱</button>
-</div>
+    def get_free_coins(self):
+        reward = random.randint(40, 100)
+        self.balance += reward
+        print(f"\n🎁 Бонус! Ти отримав {COLORS['Gold']}{reward} безкоштовних монет{COLORS['END']}.")
 
-<!-- TOP -->
-<div class="top">
-<img id="avatarImg">
-<div>
-<input id="nick" placeholder="Nick"><br>
-<input type="file" id="avatar">
-</div>
-</div>
+    def play(self):
+        print(f"{COLORS['Gold']}=== BLOCK STRIKE EXCLUSIVE CASE ==={COLORS['END']}")
+        while True:
+            print(f"\n💰 Баланс: {COLORS['Gold']}{self.balance} монет{COLORS['END']}")
+            print(f"1. Відкрити Оновлений Кейс (Ціна: {self.case_price} монет)")
+            print("2. Подивитися Інвентар")
+            print("3. Продати скін")
+            print("4. Отримати безкоштовні монети")
+            print("5. Вийти з гри")
+            
+            choice = input("\nОбери дію (1-5): ").strip()
+            
+            if choice == "1":
+                self.spin_case()
+            elif choice == "2":
+                self.show_inventory()
+            elif choice == "3":
+                self.sell_item()
+            elif choice == "4":
+                self.get_free_coins()
+            elif choice == "5":
+                print("\nДякуємо за гру! Удачі в БС!")
+                break
+            else:
+                print("\n❌ Невідома команда.")
 
-<!-- MAIN -->
-<div class="center" id="main"></div>
-
-<script>
-
-/* DATA */
-let coins = +localStorage.getItem("coins") || 100;
-let inv = JSON.parse(localStorage.getItem("inv")) || [];
-let market = JSON.parse(localStorage.getItem("market")) || [];
-
-/* ITEMS */
-const items=[
-{name:"AK-47",rarity:"common"},
-{name:"M4",rarity:"rare"},
-{name:"AWP",rarity:"epic"},
-{name:"Knife",rarity:"legendary"}
-];
-
-const price={
-common:20,
-rare:50,
-epic:120,
-legendary:300
-};
-
-/* SAVE */
-function save(){
-localStorage.setItem("coins",coins);
-localStorage.setItem("inv",JSON.stringify(inv));
-localStorage.setItem("market",JSON.stringify(market));
-localStorage.setItem("nick",nick.value);
-localStorage.setItem("avatar",avatarImg.src);
-}
-
-/* MENU */
-function menu(){
-main.innerHTML=`
-<h1>NEON CASE GAME</h1>
-<div class="box">
-<button onclick="games()">▶ ГРАТИ</button>
-</div>
-`;
-}
-
-/* GAMES */
-function games(){
-main.innerHTML=`
-<div class="box" onclick="cases()">📦 Кейси</div>
-<div class="box" onclick="battle()">🔫 Командний бій</div>
-<div class="box" onclick="clicker()">💰 Клікер</div>
-`;
-}
-
-/* CLICKER */
-function clicker(){
-coins++;
-save();
-}
-
-/* CASES */
-function cases(){
-main.innerHTML=`
-<div class="box">
-<button onclick="openCase()">Відкрити кейс (50💰)</button>
-</div>
-`;
-}
-
-/* OPEN CASE */
-function openCase(){
-if(coins<50)return;
-coins-=50;
-
-main.innerHTML=`
-<div class="roulette">
-<div class="pointer"></div>
-<div id="roll" class="items"></div>
-</div>
-<div id="res"></div>
-<button onclick="cases()">⬅ Назад</button>
-`;
-
-let roll=document.getElementById("roll");
-
-/* GENERATE */
-for(let i=0;i<60;i++){
-let it=items[Math.floor(Math.random()*items.length)];
-let d=document.createElement("div");
-d.className="item "+it.rarity;
-d.innerText=it.name;
-roll.appendChild(d);
-}
-
-/* WIN */
-let win=45;
-let offset=(win*80)-150;
-
-setTimeout(()=>{
-roll.style.transform=`translateX(-${offset}px)`;
-},50);
-
-setTimeout(()=>{
-let name=roll.children[win].innerText;
-let r=items.find(i=>i.name==name);
-
-inv.push({
-name:name,
-rarity:r.rarity,
-price:price[r.rarity]
-});
-
-coins+=10;
-save();
-
-document.getElementById("res").innerHTML=
-`<h2>🎉 ${name}</h2>`;
-},4000);
-}
-
-/* INVENTORY */
-function inventoryUI(){
-main.innerHTML="";
-inv.forEach((i,idx)=>{
-main.innerHTML+=`
-<div class="inv">
-${i.name} (${i.rarity}) 💰${i.price}
-<button onclick="sell(${idx})">Sell</button>
-</div>`;
-});
-}
-
-/* SELL */
-function sell(i){
-coins+=inv[i].price;
-inv.splice(i,1);
-save();
-inventoryUI();
-}
-
-/* MARKET */
-function marketUI(){
-main.innerHTML="<h3>Market</h3>";
-
-market.forEach((m,idx)=>{
-main.innerHTML+=`
-<div class="inv">
-${m.name} 💰${m.price}
-<button onclick="buy(${idx})">Buy</button>
-</div>`;
-});
-}
-
-/* BUY */
-function buy(i){
-if(coins<market[i].price)return;
-coins-=market[i].price;
-inv.push(market[i]);
-market.splice(i,1);
-save();
-marketUI();
-}
-
-/* LIST */
-function list(i){
-market.push(inv[i]);
-inv.splice(i,1);
-save();
-inventoryUI();
-}
-
-/* BATTLE */
-function battle(){
-let p=0,e=0,log="";
-for(let i=0;i<10;i++){
-if(Math.random()>0.5){p++;log+="Kill<br>"}else{e++;log+="Death<br>"}
-}
-coins+=p*10;
-
-main.innerHTML=`
-<h2>Бій</h2>
-<p>${p} : ${e}</p>
-${log}
-`;
-save();
-}
-
-/* AVATAR */
-avatar.onchange=e=>{
-let r=new FileReader();
-r.onload=()=>{
-avatarImg.src=r.result;
-save();
-}
-r.readAsDataURL(e.target.files[0]);
-};
-
-/* INIT */
-window.onload=()=>{
-nick.value=localStorage.getItem("nick")||"";
-avatarImg.src=localStorage.getItem("avatar")||"";
-
-setTimeout(()=>{
-loading.style.display="none";
-menu();
-},1200);
-};
-
-</script>
-
-</body>
-  </html>
+if __name__ == "__main__":
+    simulator = CaseSimulator()
+    simulator.play()
+                             
